@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MeetIQ | Participant Registration</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+
+</head>
+
+<body>
+
+<div class="auth-page">
+
+    <div class="orb orb-two"></div>
+    <div class="orb orb-three"></div>
+
+    <div class="auth-wrapper">
+
+        <div class="brand">
+
+            <div class="brand-logo">M</div>
+
+            <div>
+                <div class="brand-name">MeetIQ</div>
+                <span class="brand-subtitle">
+                    Intelligent Meetings
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="auth-card">
+
+
+            <div class="visual-side">
+
+                <div class="visual-content">
+
+                    <span class="visual-label">
+                        PARTICIPANT PROFILE
+                    </span>
+
+                    <h1 class="visual-title">
+
+                        Your meetings.
+                        <br>
+
+                        <span class="gradient-text">
+                            Your insights.
+                        </span>
+
+                    </h1>
+
+                    <p class="visual-description">
+                        Create your participant profile to access
+                        authorized meetings and personalized analytics.
+                    </p>
+
+
+                    <div class="preview-card">
+
+                        <div class="preview-top">
+
+                            <span class="preview-title">
+                                Smart Profile
+                            </span>
+
+                            <span class="live">
+                                <span class="live-dot"></span>
+                                ACTIVE
+                            </span>
+
+                        </div>
+
+                        <div class="preview-grid">
+
+                            <div class="preview-box"></div>
+                            <div class="preview-box"></div>
+                            <div class="preview-box"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-side">
+
+                <div class="form-header">
+
+                    <span class="form-badge">
+                        PARTICIPANT REGISTRATION
+                    </span>
+
+                    <h2>Create your profile</h2>
+
+                    <p>
+                        Enter your details to get started
+                    </p>
+
+                </div>
+
+
+                <!-- FLASH MESSAGES -->
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+
+                    {% if messages %}
+
+                        <div class="flash-stack">
+
+                            {% for category, message in messages %}
+
+                                <div class="flash-message {{ category }}">
+
+                                    <span class="flash-icon">
+
+                                        {% if category == "success" %}
+                                            ✓
+                                        {% else %}
+                                            !
+                                        {% endif %}
+
+                                    </span>
+
+                                    <span>
+                                        {{ message }}
+                                    </span>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% endif %}
+
+                {% endwith %}
+
+
+                <form class="register-form"
+                      method="POST"
+                      action="{{ url_for('participant_register') }}">
+
+
+                    <div class="form-group">
+
+                        <label>FULL NAME</label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="text"
+                                name="name"
+                                placeholder="Your full name"
+                                required>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>EMAIL ADDRESS</label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="email"
+                                name="email"
+                                placeholder="you@example.com"
+                                required>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="two-column">
+
+
+                        <div class="form-group">
+
+                            <label>DEPARTMENT</label>
+
+                            <div class="input-wrapper">
+
+                                <select name="department" required>
+
+                                    <option value="">
+                                        Select
+                                    </option>
+
+                                    <option>
+                                        CSE
+                                    </option>
+
+                                    <option>
+                                        CSE - Data Science
+                                    </option>
+
+                                    <option>
+                                        CSE - AI & ML
+                                    </option>
+
+                                    <option>
+                                        ECE
+                                    </option>
+
+                                    <option>
+                                        EEE
+                                    </option>
+
+                                    <option>
+                                        Mechanical
+                                    </option>
+
+                                    <option>
+                                        Civil
+                                    </option>
+
+                                    <option>
+                                        Other
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>YEAR</label>
+
+                            <div class="input-wrapper">
+
+                                <select name="year" required>
+
+                                    <option value="">
+                                        Select
+                                    </option>
+
+                                    <option>
+                                        1st Year
+                                    </option>
+
+                                    <option>
+                                        2nd Year
+                                    </option>
+
+                                    <option>
+                                        3rd Year
+                                    </option>
+
+                                    <option>
+                                        4th Year
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>STUDENT / EMPLOYEE ID</label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                type="text"
+                                name="user_id"
+                                placeholder="Enter your ID"
+                                required>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="two-column">
+
+
+                        <div class="form-group">
+
+                            <label>PASSWORD</label>
+
+                            <div class="input-wrapper">
+
+                                <input
+                                    id="participantRegisterPassword"
+                                    type="password"
+                                    name="password"
+                                    placeholder="Password"
+                                    required>
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    onclick="togglePassword('participantRegisterPassword', this)">
+
+                                    SHOW
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>CONFIRM PASSWORD</label>
+
+                            <div class="input-wrapper">
+
+                                <input
+                                    id="participantConfirmPassword"
+                                    type="password"
+                                    name="confirm_password"
+                                    placeholder="Confirm"
+                                    required>
+
+                                <button
+                                    type="button"
+                                    class="password-toggle"
+                                    onclick="togglePassword('participantConfirmPassword', this)">
+
+                                    SHOW
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        class="primary-btn"
+                        type="submit">
+
+                        CREATE PARTICIPANT ACCOUNT
+
+                    </button>
+
+                </form>
+
+
+                <div class="divider">
+                    ALREADY REGISTERED?
+                </div>
+
+
+                <div class="bottom-text">
+
+                    <a href="{{ url_for('participant_login') }}">
+                        Back to Participant Login
+                    </a>
+
+                </div>
+
+
+                <div class="security-note">
+
+                    <span class="security-dot"></span>
+
+                    Your information is protected
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+</body>
+
+</html>
+```

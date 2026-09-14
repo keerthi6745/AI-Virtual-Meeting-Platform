@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Create Meeting | MeetIQ</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", sans-serif;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(124, 58, 237, 0.16), transparent 28%),
+                radial-gradient(circle at 85% 10%, rgba(37, 99, 235, 0.13), transparent 25%),
+                #070914;
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================== */
+
+        .sidebar {
+            width: 255px;
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+
+            background: rgba(11, 15, 31, 0.94);
+            border-right: 1px solid rgba(255,255,255,0.07);
+
+            backdrop-filter: blur(20px);
+
+            padding: 28px 18px;
+            z-index: 10;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 10px 30px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 13px;
+
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+
+            box-shadow: 0 8px 25px rgba(124,58,237,0.35);
+        }
+
+        .brand-icon span {
+            font-size: 21px;
+            font-weight: 800;
+        }
+
+        .brand-text h2 {
+            font-size: 18px;
+            font-weight: 800;
+        }
+
+        .brand-text p {
+            color: #7f8aa8;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.4px;
+            margin-top: 3px;
+        }
+
+        .nav-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #606b87;
+
+            padding: 0 12px;
+            margin: 8px 0 10px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 13px;
+
+            padding: 12px 13px;
+            margin-bottom: 5px;
+
+            border-radius: 12px;
+
+            color: #8993ad;
+            text-decoration: none;
+
+            font-size: 13px;
+            font-weight: 600;
+
+            transition: 0.25s;
+        }
+
+        .nav-item:hover {
+            color: white;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .nav-item.active {
+            color: white;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(124,58,237,0.24),
+                    rgba(37,99,235,0.15)
+                );
+
+            border: 1px solid rgba(124,58,237,0.22);
+        }
+
+        .nav-icon {
+            width: 21px;
+            text-align: center;
+            font-size: 17px;
+        }
+
+        .sidebar-bottom {
+            position: absolute;
+            left: 18px;
+            right: 18px;
+            bottom: 22px;
+        }
+
+        .admin-profile {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+
+            padding: 12px;
+
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.06);
+
+            border-radius: 14px;
+        }
+
+        .avatar {
+            width: 35px;
+            height: 35px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 11px;
+
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+
+            font-size: 13px;
+            font-weight: 800;
+        }
+
+        .admin-info strong {
+            display: block;
+            font-size: 12px;
+        }
+
+        .admin-info span {
+            display: block;
+            color: #68738f;
+            font-size: 10px;
+            margin-top: 3px;
+        }
+
+        /* =========================
+           MAIN
+        ========================== */
+
+        .main-content {
+            margin-left: 255px;
+            width: calc(100% - 255px);
+
+            padding: 28px 34px 50px;
+        }
+
+        /* =========================
+           HEADER
+        ========================== */
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            margin-bottom: 28px;
+        }
+
+        .page-title h1 {
+            font-size: 27px;
+            font-weight: 800;
+            letter-spacing: -0.8px;
+        }
+
+        .page-title p {
+            color: #7f8aa5;
+            font-size: 13px;
+            margin-top: 7px;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            padding: 10px 14px;
+
+            color: #9ca7bd;
+            background: rgba(255,255,255,0.035);
+
+            border: 1px solid rgba(255,255,255,0.07);
+
+            border-radius: 11px;
+
+            text-decoration: none;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            transition: 0.2s;
+        }
+
+        .back-btn:hover {
+            color: white;
+            background: rgba(255,255,255,0.07);
+        }
+
+        /* =========================
+           FORM LAYOUT
+        ========================== */
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 310px;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .form-card,
+        .side-card {
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(255,255,255,0.055),
+                    rgba(255,255,255,0.025)
+                );
+
+            border: 1px solid rgba(255,255,255,0.07);
+
+            border-radius: 19px;
+        }
+
+        .form-card {
+            padding: 26px;
+        }
+
+        .card-heading {
+            margin-bottom: 24px;
+        }
+
+        .card-heading h2 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .card-heading p {
+            color: #6f7a94;
+            font-size: 11px;
+            margin-top: 6px;
+            line-height: 1.6;
+        }
+
+        /* =========================
+           FORM
+        ========================== */
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .section-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7d88a2;
+            margin-bottom: 13px;
+            font-weight: 700;
+        }
+
+        .form-group {
+            margin-bottom: 17px;
+        }
+
+        .form-group label {
+            display: block;
+
+            color: #b6bfd1;
+
+            font-size: 11px;
+            font-weight: 600;
+
+            margin-bottom: 7px;
+        }
+
+        .form-group label span {
+            color: #a78bfa;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+
+            border: 1px solid rgba(255,255,255,0.08);
+
+            outline: none;
+
+            background: rgba(0,0,0,0.17);
+
+            color: #f8fafc;
+
+            border-radius: 11px;
+
+            padding: 12px 13px;
+
+            font-family: inherit;
+            font-size: 12px;
+
+            transition: 0.2s;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: #59647d;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            border-color: rgba(124,58,237,0.55);
+
+            box-shadow:
+                0 0 0 3px rgba(124,58,237,0.08);
+        }
+
+        textarea {
+            min-height: 105px;
+            resize: vertical;
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        select option {
+            background: #111527;
+            color: white;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* =========================
+           OPTIONS
+        ========================== */
+
+        .option-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .option {
+            position: relative;
+        }
+
+        .option input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .option label {
+            display: block;
+
+            padding: 13px;
+
+            border-radius: 12px;
+
+            background: rgba(255,255,255,0.025);
+
+            border: 1px solid rgba(255,255,255,0.07);
+
+            color: #8993aa;
+
+            cursor: pointer;
+
+            text-align: center;
+
+            font-size: 10px;
+            font-weight: 600;
+
+            transition: 0.2s;
+        }
+
+        .option label:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .option input:checked + label {
+            color: white;
+
+            background: rgba(124,58,237,0.13);
+
+            border-color: rgba(124,58,237,0.42);
+
+            box-shadow:
+                inset 0 0 20px rgba(124,58,237,0.04);
+        }
+
+        .option-icon {
+            display: block;
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        /* =========================
+           AI OPTIONS
+        ========================== */
+
+        .ai-box {
+            padding: 17px;
+
+            border-radius: 14px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(124,58,237,0.10),
+                    rgba(37,99,235,0.05)
+                );
+
+            border: 1px solid rgba(124,58,237,0.14);
+        }
+
+        .ai-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            margin-bottom: 13px;
+        }
+
+        .ai-icon {
+            width: 32px;
+            height: 32px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 9px;
+
+            background: rgba(124,58,237,0.16);
+
+            font-size: 15px;
+        }
+
+        .ai-title strong {
+            font-size: 11px;
+        }
+
+        .ai-title span {
+            display: block;
+            color: #707b94;
+            font-size: 9px;
+            margin-top: 3px;
+        }
+
+        .checkbox-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 9px;
+        }
+
+        .check-option {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            padding: 10px;
+
+            background: rgba(0,0,0,0.12);
+
+            border: 1px solid rgba(255,255,255,0.05);
+
+            border-radius: 9px;
+
+            color: #9aa4b9;
+
+            font-size: 10px;
+
+            cursor: pointer;
+        }
+
+        .check-option input {
+            width: 14px;
+            height: 14px;
+            accent-color: #7c3aed;
+        }
+
+        /* =========================
+           BUTTONS
+        ========================== */
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+
+            padding-top: 7px;
+
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .cancel-btn,
+        .submit-btn {
+            padding: 12px 17px;
+
+            border-radius: 11px;
+
+            font-family: inherit;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            color: #8993a9;
+
+            background: rgba(255,255,255,0.035);
+
+            border: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .cancel-btn:hover {
+            color: white;
+        }
+
+        .submit-btn {
+            color: white;
+
+            border: none;
+
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+
+            box-shadow:
+                0 8px 25px rgba(99,102,241,0.22);
+
+            transition: 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 12px 30px rgba(99,102,241,0.32);
+        }
+
+        /* =========================
+           SIDE CARDS
+        ========================== */
+
+        .side-card {
+            padding: 20px;
+            margin-bottom: 17px;
+        }
+
+        .side-card h3 {
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .side-card > p {
+            color: #6f7a93;
+            font-size: 10px;
+            line-height: 1.65;
+        }
+
+        .feature {
+            display: flex;
+            gap: 11px;
+
+            padding: 13px 0;
+
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .feature:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .feature-icon {
+            width: 30px;
+            height: 30px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 9px;
+
+            background: rgba(124,58,237,0.11);
+
+            font-size: 13px;
+        }
+
+        .feature strong {
+            display: block;
+            font-size: 10px;
+        }
+
+        .feature span {
+            display: block;
+            color: #68738d;
+            font-size: 9px;
+            line-height: 1.5;
+            margin-top: 3px;
+        }
+
+        /* =========================
+           TIP CARD
+        ========================== */
+
+        .tip-card {
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(16,185,129,0.08),
+                    rgba(37,99,235,0.04)
+                );
+
+            border-color: rgba(16,185,129,0.12);
+        }
+
+        .tip-card h3 {
+            color: #6ee7b7;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
+
+        @media (max-width: 1050px) {
+
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .side-card {
+                margin-bottom: 0;
+            }
+        }
+
+        @media (max-width: 800px) {
+
+            .sidebar {
+                width: 72px;
+                padding: 20px 10px;
+            }
+
+            .brand-text,
+            .nav-title,
+            .nav-item span:not(.nav-icon),
+            .admin-info {
+                display: none;
+            }
+
+            .brand {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .nav-item {
+                justify-content: center;
+            }
+
+            .sidebar-bottom {
+                left: 10px;
+                right: 10px;
+            }
+
+            .admin-profile {
+                justify-content: center;
+            }
+
+            .main-content {
+                margin-left: 72px;
+                width: calc(100% - 72px);
+                padding: 22px;
+            }
+        }
+
+        @media (max-width: 600px) {
+
+            .topbar {
+                align-items: flex-start;
+            }
+
+            .page-title h1 {
+                font-size: 22px;
+            }
+
+            .two-column {
+                grid-template-columns: 1fr;
+            }
+
+            .option-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .checkbox-list {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                padding: 19px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .cancel-btn,
+            .submit-btn {
+                width: 100%;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================
+         SIDEBAR
+    ========================== -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                <span>M</span>
+            </div>
+
+            <div class="brand-text">
+                <h2>MeetIQ</h2>
+                <p>Intelligent Meetings</p>
+            </div>
+
+        </div>
+
+
+        <div class="nav-title">
+            Workspace
+        </div>
+
+
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+
+            <span class="nav-icon">⌂</span>
+            <span>Overview</span>
+
+        </a>
+
+
+        <a href="{{ url_for('admin_meetings') }}" class="nav-item active">
+
+            <span class="nav-icon">▣</span>
+            <span>Meetings</span>
+
+        </a>
+
+
+        <a href="#" class="nav-item">
+
+            <span class="nav-icon">♙</span>
+            <span>Participants</span>
+
+        </a>
+
+
+        <a href="#" class="nav-item">
+
+            <span class="nav-icon">◩</span>
+            <span>Analytics</span>
+
+        </a>
+
+
+        <a href="#" class="nav-item">
+
+            <span class="nav-icon">✦</span>
+            <span>AI Insights</span>
+
+        </a>
+
+
+        <div class="nav-title" style="margin-top:25px;">
+            System
+        </div>
+
+
+        <a href="#" class="nav-item">
+
+            <span class="nav-icon">⚙</span>
+            <span>Settings</span>
+
+        </a>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="admin-profile">
+
+                <div class="avatar">
+                    A
+                </div>
+
+                <div class="admin-info">
+
+                    <strong>
+                        {{ session.get('user_name', 'Administrator') }}
+                    </strong>
+
+                    <span>
+                        Administrator
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =========================
+         MAIN CONTENT
+    ========================== -->
+
+    <main class="main-content">
+
+
+        <!-- HEADER -->
+
+        <div class="topbar">
+
+            <div class="page-title">
+
+                <h1>Create Meeting</h1>
+
+                <p>
+                    Set up a secure and intelligent meeting session.
+                </p>
+
+            </div>
+
+
+            <a
+                href="{{ url_for('admin_meetings') }}"
+                class="back-btn"
+            >
+                ← Back to Meetings
+            </a>
+
+        </div>
+
+
+        <!-- CONTENT -->
+
+        <div class="content-grid">
+
+
+            <!-- =========================
+                 FORM CARD
+            ========================== -->
+
+            <div class="form-card">
+
+                <div class="card-heading">
+
+                    <h2>Meeting Details</h2>
+
+                    <p>
+                        Provide the basic information for your meeting.
+                        You can configure participants and AI features below.
+                    </p>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('create_meeting') }}"
+                    onsubmit="return validateMeetingForm()"
+                >
+
+
+                    <!-- BASIC INFORMATION -->
+
+                    <div class="form-section">
+
+                        <div class="section-label">
+                            Basic Information
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>
+                                Meeting Title <span>*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                name="title"
+                                id="title"
+                                placeholder="e.g. Project Review Meeting"
+                                maxlength="100"
+                                required
+                            >
+
+                        </div>
+
+
+                        <div class="form-group">
+
+                            <label>
+                                Description
+                            </label>
+
+                            <textarea
+                                name="description"
+                                id="description"
+                                placeholder="Briefly describe the purpose of this meeting..."
+                                maxlength="500"
+                            ></textarea>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- SCHEDULE -->
+
+                    <div class="form-section">
+
+                        <div class="section-label">
+                            Schedule
+                        </div>
+
+
+                        <div class="two-column">
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Meeting Date <span>*</span>
+                                </label>
+
+                                <input
+                                    type="date"
+                                    name="date"
+                                    id="date"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Start Time <span>*</span>
+                                </label>
+
+                                <input
+                                    type="time"
+                                    name="time"
+                                    id="time"
+                                    required
+                                >
+
+                            </div>
+
+
+                        </div>
+
+
+                        <div class="two-column">
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Duration
+                                </label>
+
+                                <select name="duration">
+
+                                    <option value="30">
+                                        30 minutes
+                                    </option>
+
+                                    <option value="45">
+                                        45 minutes
+                                    </option>
+
+                                    <option value="60" selected>
+                                        1 hour
+                                    </option>
+
+                                    <option value="90">
+                                        1.5 hours
+                                    </option>
+
+                                    <option value="120">
+                                        2 hours
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    Meeting Type
+                                </label>
+
+                                <select name="meeting_type">
+
+                                    <option value="team">
+                                        Team Meeting
+                                    </option>
+
+                                    <option value="class">
+                                        Class / Academic
+                                    </option>
+
+                                    <option value="interview">
+                                        Interview
+                                    </option>
+
+                                    <option value="review">
+                                        Project Review
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACCESS -->
+
+                    <div class="form-section">
+
+                        <div class="section-label">
+                            Participant Access
+                        </div>
+
+
+                        <div class="option-grid">
+
+
+                            <div class="option">
+
+                                <input
+                                    type="radio"
+                                    name="access"
+                                    id="selected"
+                                    value="selected"
+                                    checked
+                                >
+
+                                <label for="selected">
+
+                                    <span class="option-icon">
+                                        ♙
+                                    </span>
+
+                                    Selected Participants
+
+                                </label>
+
+                            </div>
+
+
+                            <div class="option">
+
+                                <input
+                                    type="radio"
+                                    name="access"
+                                    id="department"
+                                    value="department"
+                                >
+
+                                <label for="department">
+
+                                    <span class="option-icon">
+                                        ◈
+                                    </span>
+
+                                    Department
+
+                                </label>
+
+                            </div>
+
+
+                            <div class="option">
+
+                                <input
+                                    type="radio"
+                                    name="access"
+                                    id="everyone"
+                                    value="everyone"
+                                >
+
+                                <label for="everyone">
+
+                                    <span class="option-icon">
+                                        ◎
+                                    </span>
+
+                                    All Participants
+
+                                </label>
+
+                            </div>
+
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- AI FEATURES -->
+
+                    <div class="form-section">
+
+                        <div class="section-label">
+                            Intelligent Meeting Features
+                        </div>
+
+
+                        <div class="ai-box">
+
+
+                            <div class="ai-title">
+
+                                <div class="ai-icon">
+                                    ✦
+                                </div>
+
+                                <div>
+
+                                    <strong>
+                                        MeetIQ AI Intelligence
+                                    </strong>
+
+                                    <span>
+                                        Enable intelligent analysis for this meeting
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="checkbox-list">
+
+
+                                <label class="check-option">
+
+                                    <input
+                                        type="checkbox"
+                                        name="ai_summary"
+                                        checked
+                                    >
+
+                                    AI Meeting Summary
+
+                                </label>
+
+
+                                <label class="check-option">
+
+                                    <input
+                                        type="checkbox"
+                                        name="attention_monitoring"
+                                        checked
+                                    >
+
+                                    Attention Monitoring
+
+                                </label>
+
+
+                                <label class="check-option">
+
+                                    <input
+                                        type="checkbox"
+                                        name="toxicity_detection"
+                                        checked
+                                    >
+
+                                    Toxicity Detection
+
+                                </label>
+
+
+                                <label class="check-option">
+
+                                    <input
+                                        type="checkbox"
+                                        name="attendance_tracking"
+                                        checked
+                                    >
+
+                                    Attendance Tracking
+
+                                </label>
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ACTIONS -->
+
+                    <div class="form-actions">
+
+                        <button
+                            type="button"
+                            class="cancel-btn"
+                            onclick="window.location.href='{{ url_for('admin_meetings') }}'"
+                        >
+                            Cancel
+                        </button>
+
+
+                        <button
+                            type="submit"
+                            class="submit-btn"
+                        >
+                            Create Meeting →
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </div>
+
+
+            <!-- =========================
+                 SIDE INFORMATION
+            ========================== -->
+
+            <div>
+
+
+                <div class="side-card">
+
+                    <h3>
+                        What happens next?
+                    </h3>
+
+                    <p>
+                        After creating the meeting, you can manage participants,
+                        start the meeting and access intelligent meeting insights.
+                    </p>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ♙
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Add Participants
+                            </strong>
+
+                            <span>
+                                Select authorized users or filter participants.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ◉
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Start Meeting
+                            </strong>
+
+                            <span>
+                                Launch the secure virtual meeting room.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ✦
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                AI Analysis
+                            </strong>
+
+                            <span>
+                                Generate summaries and meeting intelligence.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="feature">
+
+                        <div class="feature-icon">
+                            ◩
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                View Analytics
+                            </strong>
+
+                            <span>
+                                Review attendance and engagement insights.
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="side-card tip-card">
+
+                    <h3>
+                        ✓ Secure by Design
+                    </h3>
+
+                    <p>
+                        Only authorized participants will be able to access
+                        the meeting once participant management is configured.
+                    </p>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        function validateMeetingForm() {
+
+            const title =
+                document.getElementById("title").value.trim();
+
+            const date =
+                document.getElementById("date").value;
+
+            const time =
+                document.getElementById("time").value;
+
+
+            if (!title) {
+
+                alert("Please enter a meeting title.");
+
+                return false;
+
+            }
+
+
+            if (!date) {
+
+                alert("Please select a meeting date.");
+
+                return false;
+
+            }
+
+
+            if (!time) {
+
+                alert("Please select a meeting time.");
+
+                return false;
+
+            }
+
+
+            return true;
+
+        }
+
+
+        /* Prevent selecting a past date */
+
+        const dateInput =
+            document.getElementById("date");
+
+        const today =
+            new Date().toISOString().split("T")[0];
+
+        dateInput.min = today;
+
+    </script>
+
+</body>
+</html>

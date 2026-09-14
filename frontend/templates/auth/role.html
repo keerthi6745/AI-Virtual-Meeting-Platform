@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MeetIQ | Welcome</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+
+</head>
+
+<body>
+
+<div class="auth-page">
+
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
+    <div class="orb orb-three"></div>
+
+    <div class="auth-wrapper role-page">
+
+        <div class="brand">
+
+            <div class="brand-logo">
+                
+            </div>
+
+            <div>
+                <div class="brand-name">MeetIQ</div>
+                <span class="brand-subtitle">
+                    Intelligent Meetings
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="role-header">
+
+            <div class="visual-label">
+                SECURE WORKSPACE
+            </div>
+
+            <h1>
+                Welcome to
+                <span class="gradient-text">MeetIQ</span>
+            </h1>
+
+            <p>
+                Select your workspace to continue
+            </p>
+
+        </div>
+
+
+        <div class="role-cards">
+
+
+            <!-- ADMIN -->
+
+            <a href="{{ url_for('admin_login') }}"
+               class="role-card admin">
+
+                <div class="role-icon-large">
+
+                    <svg width="28"
+                         height="28"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.7">
+
+                        <path d="M12 3L4 6v5c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10V6l-8-3z"/>
+
+                        <path d="M9 12l2 2 4-4"/>
+
+                    </svg>
+
+                </div>
+
+                <h2>Admin Workspace</h2>
+
+                <p>
+                    Create meetings, manage authorized
+                    participants and monitor intelligent analytics.
+                </p>
+
+                <div class="role-arrow">
+                    →
+                </div>
+
+            </a>
+
+
+            <!-- PARTICIPANT -->
+
+            <a href="{{ url_for('participant_login') }}"
+               class="role-card participant">
+
+                <div class="role-icon-large">
+
+                    <svg width="28"
+                         height="28"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.7">
+
+                        <circle cx="12" cy="8" r="4"/>
+
+                        <path d="M4 21c0-4.2 3.5-7 8-7s8 2.8 8 7"/>
+
+                    </svg>
+
+                </div>
+
+                <h2>Participant Workspace</h2>
+
+                <p>
+                    Join authorized meetings, view AI summaries,
+                    attendance and personalized insights.
+                </p>
+
+                <div class="role-arrow">
+                    →
+                </div>
+
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

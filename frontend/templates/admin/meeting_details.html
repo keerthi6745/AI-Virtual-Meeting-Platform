@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>MeetIQ | Meeting Details</title>
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+
+            font-family:
+                Inter,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background:
+                radial-gradient(
+                    circle at 10% 10%,
+                    rgba(92, 64, 255, 0.18),
+                    transparent 30%
+                ),
+                radial-gradient(
+                    circle at 90% 80%,
+                    rgba(0, 200, 255, 0.12),
+                    transparent 30%
+                ),
+                #070b16;
+
+            color: white;
+
+            min-height: 100vh;
+
+            overflow-x: hidden;
+        }
+
+
+        .main {
+
+            margin-left: 245px;
+
+            min-height: 100vh;
+
+            padding: 38px 42px 60px;
+        }
+
+
+        .topbar {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 30px;
+        }
+
+
+        .page-title h1 {
+
+            font-size: 28px;
+
+            margin-bottom: 7px;
+        }
+
+
+        .page-title p {
+
+            color: #7f8aa5;
+
+            font-size: 13px;
+        }
+        
+
+        .back-button {
+
+            padding: 10px 16px;
+
+            border-radius: 10px;
+
+            border:
+                1px solid rgba(255,255,255,0.08);
+
+            background:
+                rgba(255,255,255,0.04);
+
+            color: #aab4c8;
+
+            text-decoration: none;
+
+            font-size: 12px;
+        }
+
+
+        .back-button:hover {
+
+            color: white;
+
+            background:
+                rgba(255,255,255,0.08);
+        }
+        .remove-button {
+
+    padding: 7px 11px;
+
+    border-radius: 8px;
+
+    border:
+        1px solid rgba(255, 80, 100, 0.18);
+
+    background:
+        rgba(255, 80, 100, 0.06);
+
+    color: #ff7b8b;
+
+    cursor: pointer;
+
+    font-size: 10px;
+}
+
+
+.remove-button:hover {
+
+    background:
+        rgba(255, 80, 100, 0.14);
+
+    color: white;
+}
+        .delete-button {
+
+    padding: 10px 16px;
+
+    border-radius: 10px;
+
+    border: 1px solid rgba(255, 80, 100, 0.20);
+
+    background: rgba(255, 80, 100, 0.08);
+
+    color: #ff7b8b;
+
+    cursor: pointer;
+
+    font-size: 12px;
+}
+
+
+.delete-button:hover {
+
+    background: rgba(255, 80, 100, 0.15);
+
+    color: white;
+}
+
+        .details-card {
+
+            background:
+                rgba(13, 19, 34, 0.80);
+
+            border:
+                1px solid rgba(255,255,255,0.07);
+
+            border-radius: 18px;
+
+            padding: 25px;
+
+            margin-bottom: 20px;
+        }
+
+
+        .meeting-title {
+
+            font-size: 22px;
+
+            margin-bottom: 8px;
+        }
+
+
+        .meeting-description {
+
+            color: #78839d;
+
+            font-size: 12px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .info-grid {
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(4, 1fr);
+
+            gap: 14px;
+        }
+
+
+        .info-box {
+
+            padding: 17px;
+
+            border-radius: 13px;
+
+            background:
+                rgba(255,255,255,0.025);
+
+            border:
+                1px solid rgba(255,255,255,0.06);
+        }
+
+
+        .info-label {
+
+            color: #69748e;
+
+            font-size: 9px;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+            margin-bottom: 8px;
+        }
+
+
+        .info-value {
+
+            color: #e8ebf4;
+
+            font-size: 13px;
+
+            font-weight: 600;
+        }
+
+
+        .section-card {
+
+            background:
+                rgba(13, 19, 34, 0.80);
+
+            border:
+                1px solid rgba(255,255,255,0.07);
+
+            border-radius: 18px;
+
+            overflow: hidden;
+        }
+
+
+        .section-header {
+
+            padding: 20px 22px;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.06);
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+        }
+
+
+        .section-header h2 {
+
+            font-size: 15px;
+        }
+
+
+        .count {
+
+            color: #7f8aa5;
+
+            font-size: 11px;
+        }
+
+
+        .participant-list {
+
+            padding: 10px 0;
+        }
+
+
+        .participant {
+
+            display: grid;
+
+            grid-template-columns:
+                42px
+                1fr
+                150pxs
+                70px
+                80px;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding: 15px 22px;
+
+            border-bottom:
+                1px solid rgba(255,255,255,0.05);
+        }
+
+
+        .participant:last-child {
+
+            border-bottom: none;
+        }
+
+
+        .avatar {
+
+            width: 36px;
+            height: 36px;
+
+            border-radius: 10px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #7057ff,
+                    #19cfff
+                );
+
+            font-size: 13px;
+
+            font-weight: 700;
+        }
+
+
+        .participant-name {
+
+            font-size: 12px;
+
+            font-weight: 600;
+
+            margin-bottom: 4px;
+        }
+
+
+        .participant-email {
+
+            color: #707b96;
+
+            font-size: 10px;
+        }
+
+
+        .participant-department {
+
+            color: #aab4c8;
+
+            font-size: 11px;
+        }
+
+
+        .participant-year {
+
+            color: #8993aa;
+
+            font-size: 11px;
+        }
+
+
+        .empty {
+
+            padding: 55px 20px;
+
+            text-align: center;
+        }
+
+
+        .empty-icon {
+
+            font-size: 30px;
+
+            margin-bottom: 12px;
+        }
+
+
+        .empty h3 {
+
+            font-size: 15px;
+
+            margin-bottom: 6px;
+        }
+
+
+        .empty p {
+
+            color: #707b96;
+
+            font-size: 11px;
+
+            margin-bottom: 18px;
+        }
+
+
+        .invite-button {
+
+            display: inline-block;
+
+            padding: 10px 16px;
+
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #6955ff,
+                    #208ff0
+                );
+
+            color: white;
+
+            text-decoration: none;
+
+            font-size: 11px;
+
+            font-weight: 600;
+        }
+
+
+        @media (max-width: 900px) {
+
+            .info-grid {
+
+                grid-template-columns:
+                    repeat(2, 1fr);
+            }
+
+            .participant {
+
+                grid-template-columns:
+                    42px
+                    1fr;
+            }
+
+            .participant-department,
+            .participant-year {
+
+                display: none;
+            }
+        }
+
+
+        @media (max-width: 750px) {
+
+            .main {
+
+                margin-left: 70px;
+
+                padding: 25px 18px 45px;
+            }
+
+            .topbar {
+
+                align-items: flex-start;
+
+                gap: 15px;
+
+                flex-direction: column;
+            }
+
+            .info-grid {
+
+                grid-template-columns: 1fr;
+            }
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+{% include "admin/_sidebar.html" %}
+
+
+<main class="main">
+
+
+    <div class="topbar">
+
+        <div class="page-title">
+
+            <h1>Meeting Details</h1>
+
+            <p>
+                View meeting information and invited participants.
+            </p>
+
+        </div>
+
+
+        <a
+            href="{{ url_for('admin_meetings') }}"
+            class="back-button"
+        >
+            ← Back to Meetings
+        </a>
+        <form
+    action="{{ url_for(
+        'delete_meeting',
+        meeting_id=meeting._id
+    ) }}"
+    method="POST"
+    onsubmit="return confirm(
+        'Are you sure you want to permanently delete this meeting?'
+    );"
+    style="display: inline;"
+>
+
+    <button
+        type="submit"
+        class="delete-button"
+    >
+        🗑 Delete Meeting
+    </button>
+
+</form>
+
+    </div>
+
+
+
+    <!-- MEETING INFORMATION -->
+
+    <div class="details-card">
+
+        <h2 class="meeting-title">
+            {{ meeting.title }}
+        </h2>
+
+
+        <p class="meeting-description">
+
+            {% if meeting.description %}
+
+                {{ meeting.description }}
+
+            {% else %}
+
+                No description provided.
+
+            {% endif %}
+
+        </p>
+
+
+        <div class="info-grid">
+
+
+            <div class="info-box">
+
+                <div class="info-label">
+                    Date
+                </div>
+
+                <div class="info-value">
+
+                    {% if meeting.formatted_date %}
+                        {{ meeting.formatted_date }}
+                    {% else %}
+                        {{ meeting.date }}
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <div class="info-label">
+                    Time
+                </div>
+
+                <div class="info-value">
+
+                    {% if meeting.formatted_time %}
+                        {{ meeting.formatted_time }}
+                    {% else %}
+                        {{ meeting.time }}
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <div class="info-label">
+                    Duration
+                </div>
+
+                <div class="info-value">
+                    {{ meeting.duration }} min
+                </div>
+
+            </div>
+
+
+            <div class="info-box">
+
+                <div class="info-label">
+                    Meeting Type
+                </div>
+
+                <div class="info-value">
+
+                    {{ meeting.meeting_type
+                       |replace('_', ' ')
+                       |title }}
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+
+
+    <!-- PARTICIPANTS -->
+
+    <div class="section-card">
+
+
+        <div class="section-header">
+
+            <h2>
+                Invited Participants
+            </h2>
+
+            <span class="count">
+                {{ invited_participants|length }} invited
+            </span>
+
+        </div>
+
+
+        {% if invited_participants %}
+
+
+            <div class="participant-list">
+
+
+                {% for participant in invited_participants %}
+
+
+                <div class="participant">
+
+
+                    <div class="avatar">
+
+                        {{ participant.name[0]|upper }}
+
+                    </div>
+
+
+                    <div>
+
+                        <div class="participant-name">
+
+                            {{ participant.name }}
+
+                        </div>
+
+                        <div class="participant-email">
+
+                            {{ participant.email }}
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="participant-department">
+
+                        {{ participant.department }}
+
+                    </div>
+
+
+                    <div class="participant-year">
+
+                        Year {{ participant.year }}
+
+                    </div>
+                    <form
+    action="{{ url_for(
+        'remove_invitation',
+        meeting_id=meeting._id,
+        participant_id=participant.user_id
+    ) }}"
+    method="POST"
+    onsubmit="return confirm(
+        'Remove this participant from the meeting?'
+    );"
+>
+
+    <button
+        type="submit"
+        class="remove-button"
+    >
+        Remove
+    </button>
+
+</form>
+ 
+                </div>
+
+
+                {% endfor %}
+
+
+            </div>
+
+
+        {% else %}
+
+
+            <div class="empty">
+
+                <div class="empty-icon">
+                    👥
+                </div>
+
+                <h3>
+                    No participants invited
+                </h3>
+
+                <p>
+                    Select participants to invite them to this meeting.
+                </p>
+
+
+                <a
+                    href="{{ url_for(
+                        'invite_participants',
+                        meeting_id=meeting._id
+                    ) }}"
+
+                    class="invite-button"
+                >
+                    Invite Participants
+                </a>
+
+            </div>
+
+
+        {% endif %}
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

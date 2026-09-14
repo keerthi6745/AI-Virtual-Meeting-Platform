@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MeetIQ | Admin Registration</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/auth.css') }}">
+
+</head>
+
+<body>
+
+<div class="auth-page">
+
+    <div class="orb orb-one"></div>
+    <div class="orb orb-three"></div>
+
+    <div class="auth-wrapper">
+
+        <div class="brand">
+
+            <div class="brand-logo">M</div>
+
+            <div>
+                <div class="brand-name">MeetIQ</div>
+
+                <span class="brand-subtitle">
+                    Intelligent Meetings
+                </span>
+            </div>
+
+        </div>
+
+
+        <div class="auth-card">
+
+
+            <!-- =========================================
+                 VISUAL SIDE
+            ========================================== -->
+
+            <div class="visual-side">
+
+                <div class="visual-content">
+
+                    <span class="visual-label">
+                        ADMIN WORKSPACE
+                    </span>
+
+                    <h1 class="visual-title">
+
+                        Build a smarter
+                        <br>
+
+                        <span class="gradient-text">
+                            meeting space.
+                        </span>
+
+                    </h1>
+
+                    <p class="visual-description">
+                        Manage your meetings and create secure,
+                        intelligent collaboration experiences.
+                    </p>
+
+
+                    <div class="preview-card">
+
+                        <div class="preview-top">
+
+                            <span class="preview-title">
+                                Workspace
+                            </span>
+
+                            <span class="live">
+
+                                <span class="live-dot"></span>
+
+                                SECURE
+
+                            </span>
+
+                        </div>
+
+
+                        <div class="preview-grid">
+
+                            <div class="preview-box"></div>
+                            <div class="preview-box"></div>
+                            <div class="preview-box"></div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =========================================
+                 FORM SIDE
+            ========================================== -->
+
+            <div class="form-side">
+
+                <div class="form-header">
+
+                    <span class="form-badge">
+                        ADMIN REGISTRATION
+                    </span>
+
+                    <h2>Create workspace</h2>
+
+                    <p>
+                        Set up your administrator account
+                    </p>
+
+                </div>
+
+
+                <!-- =========================================
+                     FLASH MESSAGES
+                ========================================== -->
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+
+                    {% if messages %}
+
+                        <div class="flash-stack">
+
+                            {% for category, message in messages %}
+
+                                <div class="flash-message {{ category }}">
+
+                                    <span class="flash-icon">
+
+                                        {% if category == "success" %}
+                                            ✓
+                                        {% else %}
+                                            !
+                                        {% endif %}
+
+                                    </span>
+
+                                    <span>
+                                        {{ message }}
+                                    </span>
+
+                                </div>
+
+                            {% endfor %}
+
+                        </div>
+
+                    {% endif %}
+
+                {% endwith %}
+
+
+                <!-- =========================================
+                     REGISTRATION FORM
+                ========================================== -->
+
+                <form
+                    class="register-form"
+                    method="POST"
+                    action="{{ url_for('admin_register') }}"
+                    onsubmit="return validateAdminRegistration()"
+                >
+
+
+                    <!-- FULL NAME -->
+
+                    <div class="form-group">
+
+                        <label for="adminName">
+                            FULL NAME
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                id="adminName"
+                                type="text"
+                                name="name"
+                                placeholder="Your full name"
+                                autocomplete="name"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- EMAIL -->
+
+                    <div class="form-group">
+
+                        <label for="adminEmail">
+                            WORK / COLLEGE EMAIL
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                id="adminEmail"
+                                type="email"
+                                name="email"
+                                placeholder="admin@example.com"
+                                autocomplete="email"
+                                required
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PASSWORD -->
+
+                    <div class="form-group">
+
+                        <label for="adminRegisterPassword">
+                            PASSWORD
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                id="adminRegisterPassword"
+                                type="password"
+                                name="password"
+                                placeholder="Create a strong password"
+                                minlength="6"
+                                autocomplete="new-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('adminRegisterPassword', this)"
+                            >
+                                SHOW
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CONFIRM PASSWORD -->
+
+                    <div class="form-group">
+
+                        <label for="adminConfirmPassword">
+                            CONFIRM PASSWORD
+                        </label>
+
+                        <div class="input-wrapper">
+
+                            <input
+                                id="adminConfirmPassword"
+                                type="password"
+                                name="confirm_password"
+                                placeholder="Confirm your password"
+                                minlength="6"
+                                autocomplete="new-password"
+                                required
+                            >
+
+                            <button
+                                type="button"
+                                class="password-toggle"
+                                onclick="togglePassword('adminConfirmPassword', this)"
+                            >
+                                SHOW
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- CREATE ACCOUNT BUTTON -->
+
+                    <button
+                        id="createAdminButton"
+                        class="primary-btn"
+                        type="submit"
+                    >
+                        CREATE ADMIN ACCOUNT
+                    </button>
+
+                </form>
+
+
+                <!-- DIVIDER -->
+
+                <div class="divider">
+                    ALREADY REGISTERED?
+                </div>
+
+
+                <!-- LOGIN LINK -->
+
+                <div class="bottom-text">
+
+                    Already have an admin account?
+
+                    <a href="{{ url_for('admin_login') }}">
+                        Sign in
+                    </a>
+
+                </div>
+
+
+                <!-- SECURITY NOTE -->
+
+                <div class="security-note">
+
+                    <span class="security-dot"></span>
+
+                    Your account is protected with secure authentication.
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================================
+     PASSWORD TOGGLE + VALIDATION
+========================================== -->
+
+<script>
+
+function togglePassword(inputId, button) {
+
+    const input = document.getElementById(inputId);
+
+    if (!input) {
+        return;
+    }
+
+    if (input.type === "password") {
+
+        input.type = "text";
+        button.textContent = "HIDE";
+
+    } else {
+
+        input.type = "password";
+        button.textContent = "SHOW";
+
+    }
+}
+
+
+function validateAdminRegistration() {
+
+    const name =
+        document.getElementById("adminName").value.trim();
+
+    const email =
+        document.getElementById("adminEmail").value.trim();
+
+    const password =
+        document.getElementById("adminRegisterPassword").value;
+
+    const confirmPassword =
+        document.getElementById("adminConfirmPassword").value;
+
+
+    /* FULL NAME */
+
+    if (name.length < 2) {
+
+        alert("Please enter a valid full name.");
+
+        document.getElementById("adminName").focus();
+
+        return false;
+    }
+
+
+    /* EMAIL */
+
+    const emailPattern =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailPattern.test(email)) {
+
+        alert("Please enter a valid email address.");
+
+        document.getElementById("adminEmail").focus();
+
+        return false;
+    }
+
+
+    /* PASSWORD LENGTH */
+
+    if (password.length < 6) {
+
+        alert("Password must contain at least 6 characters.");
+
+        document.getElementById("adminRegisterPassword").focus();
+
+        return false;
+    }
+
+
+    /* PASSWORD MATCH */
+
+    if (password !== confirmPassword) {
+
+        alert("Passwords do not match.");
+
+        document.getElementById("adminConfirmPassword").focus();
+
+        return false;
+    }
+
+
+    /* PREVENT DOUBLE CLICK */
+
+    const button =
+        document.getElementById("createAdminButton");
+
+    if (button) {
+
+        button.style.opacity = "0.75";
+        button.style.pointerEvents = "none";
+        button.textContent = "CREATING ACCOUNT...";
+
+    }
+
+
+    return true;
+}
+
+</script>
+
+
+</body>
+
+</html>
+```
