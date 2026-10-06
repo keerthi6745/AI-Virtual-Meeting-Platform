@@ -222,6 +222,22 @@
 
                     </div>
 
+                    {% if admin_registration_required %}
+                    <div class="form-group">
+                        <label for="adminRegistrationKey">ADMIN REGISTRATION CODE</label>
+                        <div class="input-wrapper">
+                            <input
+                                id="adminRegistrationKey"
+                                type="password"
+                                name="registration_key"
+                                placeholder="Enter the code provided by the site owner"
+                                autocomplete="off"
+                                required
+                            >
+                        </div>
+                    </div>
+                    {% endif %}
+
 
                     <!-- PASSWORD -->
 

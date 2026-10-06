@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Meeting Summary - MeetIQ</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background:
+            radial-gradient(
+                circle at 20% 10%,
+                rgba(108, 99, 255, 0.12),
+                transparent 30%
+            ),
+            radial-gradient(
+                circle at 85% 20%,
+                rgba(0, 198, 255, 0.08),
+                transparent 28%
+            ),
+            #080c18;
+        color: #f5f7ff;
+        min-height: 100vh;
+    }
+
+    .container {
+        max-width: 1050px;
+        margin: 0 auto;
+        padding: 45px 32px 60px;
+    }
+
+    /* BACK BUTTON */
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 30px;
+        padding: 11px 17px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #c8cde0;
+        text-decoration: none;
+        border-radius: 10px;
+        font-size: 14px;
+        transition: 0.2s ease;
+    }
+
+    .back-button:hover {
+        background: rgba(108, 99, 255, 0.16);
+        border-color: rgba(108, 99, 255, 0.3);
+        color: white;
+        transform: translateX(-2px);
+    }
+
+    /* HEADER */
+
+    .header {
+        margin-bottom: 30px;
+    }
+
+    .header h1 {
+        margin: 0 0 9px;
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        color: #f7f8ff;
+    }
+
+    .header p {
+        margin: 0;
+        color: #858da5;
+        font-size: 15px;
+    }
+
+    /* SUMMARY CARDS */
+
+    .section {
+        background: rgba(17, 22, 40, 0.88);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        padding: 25px 28px;
+        margin-bottom: 20px;
+        box-shadow:
+            0 12px 35px rgba(0, 0, 0, 0.20),
+            inset 0 1px 0 rgba(255, 255, 255, 0.025);
+        backdrop-filter: blur(12px);
+        transition: 0.2s ease;
+    }
+
+    .section:hover {
+        border-color: rgba(108, 99, 255, 0.18);
+        transform: translateY(-1px);
+    }
+
+    .section h2 {
+        margin: 0 0 18px;
+        font-size: 19px;
+        font-weight: 700;
+        color: #f3f5ff;
+    }
+
+    .section ul {
+        padding-left: 22px;
+        margin: 0;
+    }
+
+    .section li {
+        margin-bottom: 12px;
+        line-height: 1.6;
+        color: #b8bfd2;
+        font-size: 14px;
+    }
+
+    .section li:last-child {
+        margin-bottom: 0;
+    }
+
+    .empty {
+        color: #70798f;
+        font-style: italic;
+        margin: 0;
+        font-size: 14px;
+    }
+
+    /* SECTION ACCENTS */
+
+    .section:nth-of-type(2) {
+        border-left: 3px solid rgba(108, 99, 255, 0.7);
+    }
+
+    .section:nth-of-type(3) {
+        border-left: 3px solid rgba(0, 198, 255, 0.7);
+    }
+
+    .section:nth-of-type(4) {
+        border-left: 3px solid rgba(80, 220, 150, 0.65);
+    }
+
+    /* MOBILE */
+
+    @media (max-width: 700px) {
+
+        .container {
+            padding: 30px 18px 45px;
+        }
+
+        .header h1 {
+            font-size: 26px;
+        }
+
+        .section {
+            padding: 21px 20px;
+            border-radius: 14px;
+        }
+
+        .section h2 {
+            font-size: 17px;
+        }
+
+        .back-button {
+            margin-bottom: 24px;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <a
+        href="{{ url_for('participant_insights') }}"
+        class="back-button"
+    >
+        ← Back to AI Insights
+    </a>
+
+    <div class="header">
+
+        <h1>
+            {{ meeting.get("title", "Meeting Summary") }}
+        </h1>
+
+        <p>
+            AI-generated meeting summary
+        </p>
+
+    </div>
+
+
+    <!-- DISCUSSION POINTS -->
+
+    <div class="section">
+
+        <h2>💬 Discussion Points</h2>
+
+        {% if ai_summary.get("discussion_points") %}
+
+            <ul>
+
+                {% for point in ai_summary.get("discussion_points", []) %}
+
+                    <li>{{ point }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p class="empty">
+                No discussion points available yet.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- DECISIONS -->
+
+    <div class="section">
+
+        <h2>✅ Decisions</h2>
+
+        {% if ai_summary.get("decisions") %}
+
+            <ul>
+
+                {% for decision in ai_summary.get("decisions", []) %}
+
+                    <li>{{ decision }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p class="empty">
+                No decisions recorded.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+
+    <!-- ACTION ITEMS -->
+
+    <div class="section">
+
+        <h2>📌 Action Items</h2>
+
+        {% if ai_summary.get("action_items") %}
+
+            <ul>
+
+                {% for item in ai_summary.get("action_items", []) %}
+                    <li>{{ item }}</li>
+
+                {% endfor %}
+
+            </ul>
+
+        {% else %}
+
+            <p class="empty">
+                No action items recorded.
+            </p>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+</body>
+
+</html>

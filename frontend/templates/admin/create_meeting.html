@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='meetiq.css') }}">
 
     <style>
 
@@ -258,7 +259,7 @@
 
         .content-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 310px;
+            grid-template-columns: minmax(0, 1fr);
             gap: 20px;
             align-items: start;
         }
@@ -399,6 +400,19 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
         }
+
+        .invite-methods { display: flex; gap: 10px; margin-top: 16px; }
+        .invite-methods label { padding: 10px 14px; border: 1px solid rgba(255,255,255,.09); border-radius: 10px; color: #aab5ce; cursor: pointer; font-size: 12px; }
+        .invite-methods input { width: auto; margin-right: 6px; accent-color: #8b5cf6; }
+        .invite-entry-panel { margin-top: 14px; padding: 16px; border: 1px solid rgba(255,255,255,.08); border-radius: 12px; background: rgba(0,0,0,.12); }
+        .invite-entry-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 10px; }
+        .invite-entry-row .form-group { margin: 0; }
+        .invite-help { color: #7f8aa8; font-size: 11px; line-height: 1.5; margin-top: 8px; }
+        .add-invite-row { padding: 9px 12px; color: #d8ccff; border: 1px solid rgba(139,92,246,.35); border-radius: 9px; background: rgba(139,92,246,.1); cursor: pointer; }
+        .remove-invite-row { padding: 9px 11px; color: #fca5a5; border: 1px solid rgba(248,113,113,.25); border-radius: 9px; background: transparent; cursor: pointer; }
+        [hidden] { display: none !important; }
+
+        @media (max-width: 600px) { .invite-entry-row { grid-template-columns: 1fr; } .invite-methods { flex-direction: column; } }
 
         .option {
             position: relative;
@@ -773,6 +787,7 @@
         }
 
     </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 </head>
 
 <body>
@@ -781,105 +796,7 @@
          SIDEBAR
     ========================== -->
 
-    <aside class="sidebar">
-
-        <div class="brand">
-
-            <div class="brand-icon">
-                <span>M</span>
-            </div>
-
-            <div class="brand-text">
-                <h2>MeetIQ</h2>
-                <p>Intelligent Meetings</p>
-            </div>
-
-        </div>
-
-
-        <div class="nav-title">
-            Workspace
-        </div>
-
-
-        <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
-
-            <span class="nav-icon">⌂</span>
-            <span>Overview</span>
-
-        </a>
-
-
-        <a href="{{ url_for('admin_meetings') }}" class="nav-item active">
-
-            <span class="nav-icon">▣</span>
-            <span>Meetings</span>
-
-        </a>
-
-
-        <a href="#" class="nav-item">
-
-            <span class="nav-icon">♙</span>
-            <span>Participants</span>
-
-        </a>
-
-
-        <a href="#" class="nav-item">
-
-            <span class="nav-icon">◩</span>
-            <span>Analytics</span>
-
-        </a>
-
-
-        <a href="#" class="nav-item">
-
-            <span class="nav-icon">✦</span>
-            <span>AI Insights</span>
-
-        </a>
-
-
-        <div class="nav-title" style="margin-top:25px;">
-            System
-        </div>
-
-
-        <a href="#" class="nav-item">
-
-            <span class="nav-icon">⚙</span>
-            <span>Settings</span>
-
-        </a>
-
-
-        <div class="sidebar-bottom">
-
-            <div class="admin-profile">
-
-                <div class="avatar">
-                    A
-                </div>
-
-                <div class="admin-info">
-
-                    <strong>
-                        {{ session.get('user_name', 'Administrator') }}
-                    </strong>
-
-                    <span>
-                        Administrator
-                    </span>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </aside>
+    {% include "admin/_sidebar.html" %}
 
 
     <!-- =========================
@@ -940,6 +857,7 @@
                 <form
                     method="POST"
                     action="{{ url_for('create_meeting') }}"
+                    enctype="multipart/form-data"
                     onsubmit="return validateMeetingForm()"
                 >
 
@@ -1106,85 +1024,36 @@
                     </div>
 
 
-                    <!-- ACCESS -->
+                    <!-- INVITE PARTICIPANTS -->
 
                     <div class="form-section">
 
                         <div class="section-label">
-                            Participant Access
+                            Invite Participants
+                        </div>
+                        <div class="invite-methods" role="radiogroup" aria-label="How to add invitees">
+                            <label><input type="radio" name="invite_method" value="manual" checked onchange="toggleInviteMethod()"> Enter details</label>
+                            <label><input type="radio" name="invite_method" value="upload" onchange="toggleInviteMethod()"> Upload CSV or Excel</label>
                         </div>
 
-
-                        <div class="option-grid">
-
-
-                            <div class="option">
-
-                                <input
-                                    type="radio"
-                                    name="access"
-                                    id="selected"
-                                    value="selected"
-                                    checked
-                                >
-
-                                <label for="selected">
-
-                                    <span class="option-icon">
-                                        ♙
-                                    </span>
-
-                                    Selected Participants
-
-                                </label>
-
+                        <div class="invite-entry-panel" id="manualInvitePanel">
+                            <div id="inviteRows">
+                                <div class="invite-entry-row">
+                                    <div class="form-group"><label>Participant name</label><input type="text" name="invite_name" placeholder="Full name"></div>
+                                    <div class="form-group"><label>Email address</label><input type="email" name="invite_email" placeholder="name@example.com"></div>
+                                    <button type="button" class="remove-invite-row" onclick="removeInviteRow(this)" aria-label="Remove participant">Remove</button>
+                                </div>
                             </div>
+                            <button type="button" class="add-invite-row" onclick="addInviteRow()">+ Add another participant</button>
+                            <p class="invite-help">Existing accounts are added to this meeting. New invitees receive an email and can register with the same email address to get access.</p>
+                        </div>
 
-
-                            <div class="option">
-
-                                <input
-                                    type="radio"
-                                    name="access"
-                                    id="department"
-                                    value="department"
-                                >
-
-                                <label for="department">
-
-                                    <span class="option-icon">
-                                        ◈
-                                    </span>
-
-                                    Department
-
-                                </label>
-
+                        <div class="invite-entry-panel" id="uploadInvitePanel" hidden>
+                            <div class="form-group">
+                                <label for="participantFile">Participant list</label>
+                                <input type="file" id="participantFile" name="participant_file" accept=".csv,.xlsx">
                             </div>
-
-
-                            <div class="option">
-
-                                <input
-                                    type="radio"
-                                    name="access"
-                                    id="everyone"
-                                    value="everyone"
-                                >
-
-                                <label for="everyone">
-
-                                    <span class="option-icon">
-                                        ◎
-                                    </span>
-
-                                    All Participants
-
-                                </label>
-
-                            </div>
-
-
+                            <p class="invite-help">Upload a CSV or Excel file (.xlsx) with columns named <strong>name</strong> and <strong>email</strong>.</p>
                         </div>
 
                     </div>
@@ -1313,134 +1182,37 @@
             </div>
 
 
-            <!-- =========================
-                 SIDE INFORMATION
-            ========================== -->
-
-            <div>
-
-
-                <div class="side-card">
-
-                    <h3>
-                        What happens next?
-                    </h3>
-
-                    <p>
-                        After creating the meeting, you can manage participants,
-                        start the meeting and access intelligent meeting insights.
-                    </p>
-
-
-                    <div class="feature">
-
-                        <div class="feature-icon">
-                            ♙
-                        </div>
-
-                        <div>
-
-                            <strong>
-                                Add Participants
-                            </strong>
-
-                            <span>
-                                Select authorized users or filter participants.
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="feature">
-
-                        <div class="feature-icon">
-                            ◉
-                        </div>
-
-                        <div>
-
-                            <strong>
-                                Start Meeting
-                            </strong>
-
-                            <span>
-                                Launch the secure virtual meeting room.
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="feature">
-
-                        <div class="feature-icon">
-                            ✦
-                        </div>
-
-                        <div>
-
-                            <strong>
-                                AI Analysis
-                            </strong>
-
-                            <span>
-                                Generate summaries and meeting intelligence.
-                            </span>
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="feature">
-
-                        <div class="feature-icon">
-                            ◩
-                        </div>
-
-                        <div>
-
-                            <strong>
-                                View Analytics
-                            </strong>
-
-                            <span>
-                                Review attendance and engagement insights.
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="side-card tip-card">
-
-                    <h3>
-                        ✓ Secure by Design
-                    </h3>
-
-                    <p>
-                        Only authorized participants will be able to access
-                        the meeting once participant management is configured.
-                    </p>
-
-                </div>
-
-
-            </div>
-
-
         </div>
 
     </main>
 
 
     <script>
+
+        function toggleInviteMethod() {
+            const upload = document.querySelector('input[name="invite_method"]:checked').value === "upload";
+            const manualPanel = document.getElementById("manualInvitePanel");
+            const uploadPanel = document.getElementById("uploadInvitePanel");
+            manualPanel.hidden = upload;
+            uploadPanel.hidden = !upload;
+            manualPanel.querySelectorAll("input").forEach(input => input.disabled = upload);
+            uploadPanel.querySelectorAll("input").forEach(input => input.disabled = !upload);
+        }
+
+        function addInviteRow() {
+            const row = document.createElement("div");
+            row.className = "invite-entry-row";
+            row.innerHTML = '<div class="form-group"><label>Participant name</label><input type="text" name="invite_name" placeholder="Full name"></div><div class="form-group"><label>Email address</label><input type="email" name="invite_email" placeholder="name@example.com"></div><button type="button" class="remove-invite-row" onclick="removeInviteRow(this)" aria-label="Remove participant">Remove</button>';
+            document.getElementById("inviteRows").appendChild(row);
+        }
+
+        function removeInviteRow(button) {
+            const rows = document.querySelectorAll("#inviteRows .invite-entry-row");
+            if (rows.length === 1) rows[0].querySelectorAll("input").forEach(input => input.value = "");
+            else button.closest(".invite-entry-row").remove();
+        }
+
+        toggleInviteMethod();
 
         function validateMeetingForm() {
 
@@ -1480,6 +1252,22 @@
 
             }
 
+            const isUpload = document.querySelector('input[name="invite_method"]:checked').value === "upload";
+            if (isUpload && !document.getElementById("participantFile").files.length) {
+                alert("Please choose a CSV or Excel participant list.");
+                return false;
+            }
+            if (!isUpload) {
+                for (const row of document.querySelectorAll("#inviteRows .invite-entry-row")) {
+                    const name = row.querySelector('[name="invite_name"]').value.trim();
+                    const email = row.querySelector('[name="invite_email"]').value.trim();
+                    if (Boolean(name) !== Boolean(email)) {
+                        alert("Enter both a participant name and email, or leave both blank.");
+                        return false;
+                    }
+                }
+            }
+
 
             return true;
 
@@ -1498,5 +1286,6 @@
 
     </script>
 
+    <script src="{{ url_for('static', filename='js/meetiq.js') }}" defer></script>
 </body>
 </html>

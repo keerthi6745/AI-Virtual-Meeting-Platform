@@ -4,6 +4,9 @@ backend/venv/
 # Environment variables and secrets
 backend/.env
 
+# Meeting audio contains private participant data and is generated at runtime
+ai-services/speech-to-text/recordings/
+
 # Python cache
 __pycache__/
 *.pyc

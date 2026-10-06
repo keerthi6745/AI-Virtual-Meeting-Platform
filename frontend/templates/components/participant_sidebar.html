@@ -1,0 +1,28 @@
+<aside class="sidebar" id="participantSidebar" aria-label="Participant navigation">
+  <button type="button" class="sidebar-close" onclick="closeSidebar()" aria-label="Close navigation" aria-controls="participantSidebar">×</button>
+  <a class="brand" href="{{ url_for('participant_dashboard') }}" aria-label="MeetIQ participant home"><span class="brand-icon" aria-hidden="true">◇</span><span class="brand-name">Meet<span>IQ</span></span></a>
+  <nav aria-label="Participant menu">
+    <div class="nav-section"><div class="nav-title">Workspace</div>
+      <a href="{{ url_for('participant_dashboard') }}" class="nav-item {% if request.endpoint == 'participant_dashboard' %}active{% endif %}" {% if request.endpoint == 'participant_dashboard' %}aria-current="page"{% endif %}><span aria-hidden="true">⌂</span>Dashboard</a>
+      <a href="{{ url_for('participant_meetings') }}" class="nav-item {% if request.endpoint in ['participant_meetings','participant_meeting'] %}active{% endif %}" {% if request.endpoint in ['participant_meetings','participant_meeting'] %}aria-current="page"{% endif %}><span aria-hidden="true">▣</span>My Meetings</a>
+      <a href="{{ url_for('participant_attendance') }}" class="nav-item {% if request.endpoint == 'participant_attendance' %}active{% endif %}" {% if request.endpoint == 'participant_attendance' %}aria-current="page"{% endif %}><span aria-hidden="true">✓</span>Attendance</a>
+    </div>
+    <div class="nav-section"><div class="nav-title">AI &amp; Insights</div>
+      <a href="{{ url_for('participant_insights') }}" class="nav-item {% if request.endpoint == 'participant_insights' %}active{% endif %}" {% if request.endpoint == 'participant_insights' %}aria-current="page"{% endif %}><span aria-hidden="true">✦</span>AI Insights</a>
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <a href="{{ url_for('logout') }}" class="nav-item"><span aria-hidden="true">↪</span>Sign out</a>
+    <a href="{{ url_for('participant_profile') }}" class="nav-item {% if request.endpoint == 'participant_profile' %}active{% endif %}" {% if request.endpoint == 'participant_profile' %}aria-current="page"{% endif %}><span aria-hidden="true">◉</span>My Profile</a>
+  </div>
+</aside>
+<script>
+  if (typeof closeSidebar !== 'function') {
+    window.closeSidebar = function(){document.body.classList.add('sidebar-closed')};
+    window.openSidebar = function(){document.body.classList.remove('sidebar-closed')};
+  }
+  if (window.matchMedia('(max-width: 800px)').matches) document.body.classList.add('sidebar-closed');
+  window.addEventListener('resize', function () {
+    if (window.matchMedia('(max-width: 800px)').matches) document.body.classList.add('sidebar-closed');
+  });
+</script>

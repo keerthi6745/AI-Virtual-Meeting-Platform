@@ -1,0 +1,7 @@
+{# Reusable accessible authenticated header controls. #}
+{% macro profile_menu(name, role, logout_href) -%}
+<details class="mq-profile-menu"><summary aria-label="Open profile menu for {{ name }}"><span class="mq-avatar" aria-hidden="true">{{ name[:1]|upper }}</span><span class="mq-profile-copy"><strong>{{ name }}</strong><small>{{ role }}</small></span></summary><div class="mq-profile-popover"><a href="{{ logout_href }}">Sign out</a></div></details>
+{%- endmacro %}
+{% macro notification_menu(unread_count=0, items=[]) -%}
+<details class="mq-notifications"><summary aria-label="Notifications{% if unread_count %}, {{ unread_count }} unread{% endif %}"><span aria-hidden="true">♧</span>{% if unread_count %}<span class="mq-notification-count">{{ unread_count }}</span>{% endif %}</summary><section class="mq-notification-panel" aria-label="Notifications"><h2>Notifications</h2>{% if items %}{% for item in items %}<article><strong>{{ item.title|default('Update') }}</strong><p>{{ item.message|default('') }}</p></article>{% endfor %}{% else %}<p>No notifications yet.</p>{% endif %}</section></details>
+{%- endmacro %}

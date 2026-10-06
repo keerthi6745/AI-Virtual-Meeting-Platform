@@ -12,6 +12,8 @@
 
     <title>MeetIQ | Invite Participants</title>
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='meetiq.css') }}">
+
     <style>
 
         * {
@@ -511,8 +513,23 @@
             font-size: 11px;
         }
 
+        .invite-methods { display:flex; gap:10px; margin-bottom:14px; }
+        .invite-methods label { padding:10px 14px; border:1px solid rgba(255,255,255,.09); border-radius:10px; color:#aab5ce; cursor:pointer; font-size:12px; }
+        .invite-methods input { width:auto; margin-right:6px; accent-color:#8b5cf6; }
+        .invite-entry-panel { padding:16px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(0,0,0,.12); }
+        .invite-entry-row { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; margin-bottom:10px; }
+        .invite-entry-row label, .upload-label { display:block; margin-bottom:6px; color:#aab5ce; font-size:12px; }
+        .invite-entry-row input, .upload-file { width:100%; padding:11px 12px; color:#f8fafc; background:rgba(0,0,0,.17); border:1px solid rgba(255,255,255,.1); border-radius:10px; }
+        .invite-help { margin-top:10px; color:#7f8aa8; font-size:11px; line-height:1.5; }
+        .add-invite-row, .remove-invite-row { padding:9px 12px; border-radius:9px; cursor:pointer; }
+        .add-invite-row { color:#d8ccff; border:1px solid rgba(139,92,246,.35); background:rgba(139,92,246,.1); }
+        .remove-invite-row { color:#fca5a5; border:1px solid rgba(248,113,113,.25); background:transparent; }
+        [hidden] { display:none !important; }
+        @media(max-width:600px) { .invite-methods { flex-direction:column; } .invite-entry-row { grid-template-columns:1fr; } }
+
     </style>
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 </head>
 
 
@@ -534,7 +551,7 @@
             <h1>Invite Participants</h1>
 
             <p>
-                Select participants for this meeting.
+                Add people to invite to this meeting.
             </p>
 
         </div>
@@ -588,107 +605,36 @@
 
     <form
         method="POST"
+        enctype="multipart/form-data"
     >
 
         <section class="participants-container">
-
-
             <div class="section-header">
-
-                <h2>
-                    Registered Participants
-                </h2>
-
-                <span
-                    class="selected-count"
-                    id="selectedCount"
-                >
-                    0 selected
-                </span>
-
+                <h2>Add invitees</h2>
             </div>
 
+            <div class="invite-methods" role="radiogroup" aria-label="How to add invitees">
+                <label><input type="radio" name="invite_method" value="manual" checked onchange="toggleInviteMethod()"> Enter details</label>
+                <label><input type="radio" name="invite_method" value="upload" onchange="toggleInviteMethod()"> Upload CSV or Excel</label>
+            </div>
 
-            {% if participants %}
-
-
-                {% for participant in participants %}
-
-
-                <div class="participant-row">
-
-
-                    <input
-                        type="checkbox"
-                        name="participant_ids"
-                        value="{{ participant.user_id }}"
-                        onchange="updateSelectedCount()"
-                    >
-
-
-                    <div class="avatar">
-
-                        {{ participant.name[0]|upper }}
-
+            <div class="invite-entry-panel" id="manualInvitePanel">
+                <div id="inviteRows">
+                    <div class="invite-entry-row">
+                        <div><label>Participant name</label><input type="text" name="invite_name" placeholder="Full name"></div>
+                        <div><label>Email address</label><input type="email" name="invite_email" placeholder="name@example.com"></div>
+                        <button type="button" class="remove-invite-row" onclick="removeInviteRow(this)" aria-label="Remove participant">Remove</button>
                     </div>
-
-
-                    <div>
-
-                        <div class="participant-name">
-
-                            {{ participant.name }}
-
-                        </div>
-
-                        <div class="participant-id">
-
-                            {{ participant.user_id }}
-
-                        </div>
-
-                    </div>
-
-
-                    <div class="participant-email">
-
-                        {{ participant.email }}
-
-                    </div>
-
-
-                    <div class="department">
-
-                        {{ participant.department }}
-
-                    </div>
-
-
                 </div>
+                <button type="button" class="add-invite-row" onclick="addInviteRow()">+ Add another participant</button>
+                <p class="invite-help">Existing accounts are added to this meeting. New invitees receive an email and can register with the same email address to get access.</p>
+            </div>
 
-
-                {% endfor %}
-
-
-            {% else %}
-
-
-                <div class="empty-state">
-
-                    <h3>
-                        No registered participants
-                    </h3>
-
-                    <p>
-                        Register participants before inviting them.
-                    </p>
-
-                </div>
-
-
-            {% endif %}
-
-
+            <div class="invite-entry-panel" id="uploadInvitePanel" hidden>
+                <label class="upload-label" for="participantFile">Participant list</label>
+                <input class="upload-file" type="file" id="participantFile" name="participant_file" accept=".csv,.xlsx">
+                <p class="invite-help">Upload a CSV or Excel file (.xlsx) with columns named <strong>name</strong> and <strong>email</strong>.</p>
+            </div>
         </section>
 
 
@@ -706,7 +652,7 @@
                 type="submit"
                 class="button invite-button"
             >
-                Invite Selected
+                Send Invitations
             </button>
 
         </div>
@@ -720,22 +666,55 @@
 
 <script>
 
-function updateSelectedCount() {
-
-    const selected =
-        document.querySelectorAll(
-            'input[name="participant_ids"]:checked'
-        ).length;
-
-    document.getElementById(
-        "selectedCount"
-    ).textContent =
-        selected + " selected";
+function toggleInviteMethod() {
+    const upload = document.querySelector('input[name="invite_method"]:checked').value === "upload";
+    const manualPanel = document.getElementById("manualInvitePanel");
+    const uploadPanel = document.getElementById("uploadInvitePanel");
+    manualPanel.hidden = upload;
+    uploadPanel.hidden = !upload;
+    manualPanel.querySelectorAll("input").forEach(input => input.disabled = upload);
+    uploadPanel.querySelectorAll("input").forEach(input => input.disabled = !upload);
 }
+
+function addInviteRow() {
+    const row = document.createElement("div");
+    row.className = "invite-entry-row";
+    row.innerHTML = '<div><label>Participant name</label><input type="text" name="invite_name" placeholder="Full name"></div><div><label>Email address</label><input type="email" name="invite_email" placeholder="name@example.com"></div><button type="button" class="remove-invite-row" onclick="removeInviteRow(this)" aria-label="Remove participant">Remove</button>';
+    document.getElementById("inviteRows").appendChild(row);
+}
+
+function removeInviteRow(button) {
+    const rows = document.querySelectorAll("#inviteRows .invite-entry-row");
+    if (rows.length === 1) rows[0].querySelectorAll("input").forEach(input => input.value = "");
+    else button.closest(".invite-entry-row").remove();
+}
+
+toggleInviteMethod();
+
+document.querySelector("form").addEventListener("submit", event => {
+    const upload = document.querySelector('input[name="invite_method"]:checked').value === "upload";
+    if (upload && !document.getElementById("participantFile").files.length) {
+        event.preventDefault();
+        alert("Please choose a CSV or Excel participant list.");
+        return;
+    }
+    if (!upload) {
+        for (const row of document.querySelectorAll("#inviteRows .invite-entry-row")) {
+            const name = row.querySelector('[name="invite_name"]').value.trim();
+            const email = row.querySelector('[name="invite_email"]').value.trim();
+            if (Boolean(name) !== Boolean(email)) {
+                event.preventDefault();
+                alert("Enter both a participant name and email, or leave both blank.");
+                return;
+            }
+        }
+    }
+});
 
 </script>
 
 
+    <script src="{{ url_for('static', filename='js/meetiq.js') }}" defer></script>
 </body>
 
 </html>

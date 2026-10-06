@@ -12,6 +12,8 @@
 
     <title>MeetIQ | Meetings</title>
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='meetiq.css') }}">
+
     <style>
 
         * {
@@ -310,15 +312,20 @@
         /* =================================================
            MAIN CONTENT
         ================================================= */
+.main {
 
-        .main {
+    margin-left: 292px;
 
-            margin-left: 245px;
+    width: calc(100% - 292px);
 
-            min-height: 100vh;
+    min-height: 100vh;
 
-            padding: 38px 42px 60px;
-        }
+    padding: 38px 42px 60px;
+
+    transition:
+        margin-left 0.3s ease,
+        width 0.3s ease;
+}
 
 
         .topbar {
@@ -567,6 +574,12 @@
 
             font-size: 12px;
         }
+
+        .meeting-status-filters { display:flex; flex-wrap:wrap; gap:8px; }
+        .meeting-status-filter { display:inline-flex; align-items:center; gap:8px; min-height:42px; padding:9px 13px; border:1px solid rgba(255,255,255,.1); border-radius:10px; background:#11182a; color:#aeb7ca; cursor:pointer; font-weight:700; }
+        .meeting-status-filter[aria-pressed="true"] { color:#fff; border-color:rgba(139,92,246,.65); background:rgba(108,99,255,.2); }
+        .meeting-status-count { padding:2px 6px; border-radius:999px; color:#ddd6ff; background:rgba(255,255,255,.1); font-size:11px; }
+        .filter-empty[hidden] { display:none; }
 
 
         /* =================================================
@@ -1079,9 +1092,40 @@
                 white-space: normal;
             }
         }
+        /* ================= ADMIN SIDEBAR OPEN / CLOSED ================= */
+
+body.admin-sidebar-closed .main {
+
+    margin-left: 0 !important;
+
+    width: 100% !important;
+}
+
+
+body:not(.admin-sidebar-closed) .main {
+
+    margin-left: 292px !important;
+
+    width: calc(100% - 292px) !important;
+}
+
+
+/* ================= MOBILE ================= */
+
+@media (max-width: 650px) {
+
+    body:not(.admin-sidebar-closed) .main {
+
+        margin-left: 0 !important;
+
+        width: 100% !important;
+    }
+
+}
 
     </style>
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
 </head>
 
 
@@ -1155,7 +1199,7 @@
             </div>
 
             <div class="stat-value">
-                {{ meetings|length }}
+                {{ upcoming_meetings }}
             </div>
 
         </div>
@@ -1187,27 +1231,6 @@
             <div class="stat-top">
 
                 <span class="stat-label">
-                    Participants
-                </span>
-
-                <div class="stat-icon">
-                    ♙
-                </div>
-
-            </div>
-
-            <div class="stat-value">
-                 {{ total_participants }}
-            </div>
-
-        </div>
-
-
-        <div class="stat-card">
-
-            <div class="stat-top">
-
-                <span class="stat-label">
                     AI Insights
                 </span>
 
@@ -1218,7 +1241,7 @@
             </div>
 
             <div class="stat-value">
-                —
+                {{ ai_insights }}
             </div>
 
         </div>
@@ -1250,21 +1273,11 @@
         </div>
 
 
-        <select
-            class="filter-select"
-            id="meetingFilter"
-            onchange="filterMeetings()"
-        >
-
-            <option value="all">
-                All Meetings
-            </option>
-
-            <option value="upcoming">
-                Upcoming
-            </option>
-
-        </select>
+        <div class="meeting-status-filters" role="group" aria-label="Filter meetings by status">
+            <button type="button" class="meeting-status-filter" data-filter="live" aria-pressed="false" onclick="filterMeetings('live')">Live <span class="meeting-status-count">{{ live_meetings }}</span></button>
+            <button type="button" class="meeting-status-filter" data-filter="upcoming" aria-pressed="false" onclick="filterMeetings('upcoming')">Upcoming <span class="meeting-status-count">{{ upcoming_meetings }}</span></button>
+            <button type="button" class="meeting-status-filter" data-filter="completed" aria-pressed="false" onclick="filterMeetings('completed')">Completed <span class="meeting-status-count">{{ completed_meetings }}</span></button>
+        </div>
 
     </div>
 
@@ -1305,7 +1318,7 @@
 
                 <div
                     class="meeting-card"
-                    data-status="upcoming"
+                    data-status="{{ meeting.get('status', 'upcoming') }}"
                     data-name="{{ meeting.title|lower }}"
                 >
 
@@ -1494,6 +1507,11 @@
 
                 {% endfor %}
 
+                <div class="empty-state filter-empty" id="meetingFilterEmpty" hidden>
+                    <h3>No meetings in this section</h3>
+                    <p>Choose another status or adjust your search.</p>
+                </div>
+
 
             {% else %}
 
@@ -1597,39 +1615,7 @@ function viewMeeting(
 ===================================================== */
 
 function searchMeetings() {
-
-    const search =
-        document
-        .getElementById("searchInput")
-        .value
-        .toLowerCase()
-        .trim();
-
-
-    const cards =
-        document.querySelectorAll(
-            ".meeting-card"
-        );
-
-
-    cards.forEach(card => {
-
-        const name =
-            card.dataset.name || "";
-
-
-        if (name.includes(search)) {
-
-            card.style.display =
-                "grid";
-
-        } else {
-
-            card.style.display =
-                "none";
-        }
-
-    });
+    refreshMeetingVisibility();
 }
 
 
@@ -1637,42 +1623,31 @@ function searchMeetings() {
    FILTER MEETINGS
 ===================================================== */
 
-function filterMeetings() {
+let activeMeetingFilter = "upcoming";
 
-    const filter =
-        document
-        .getElementById("meetingFilter")
-        .value;
-
-
-    const cards =
-        document.querySelectorAll(
-            ".meeting-card"
-        );
-
-
+function refreshMeetingVisibility() {
+    const search = (document.getElementById("searchInput")?.value || "").toLowerCase().trim();
+    const cards = document.querySelectorAll(".meeting-card");
+    let visibleCount = 0;
     cards.forEach(card => {
-
-        const status =
-            card.dataset.status;
-
-
-        if (
-            filter === "all" ||
-            filter === status
-        ) {
-
-            card.style.display =
-                "grid";
-
-        } else {
-
-            card.style.display =
-                "none";
-        }
-
+        const visible = card.dataset.status === activeMeetingFilter && (card.dataset.name || "").includes(search);
+        card.style.display = visible ? "grid" : "none";
+        if (visible) visibleCount += 1;
     });
+    const empty = document.getElementById("meetingFilterEmpty");
+    if (empty) empty.hidden = visibleCount > 0;
 }
+
+function filterMeetings(status) {
+    activeMeetingFilter = status;
+    document.querySelectorAll(".meeting-status-filter").forEach(button => {
+        button.setAttribute("aria-pressed", String(button.dataset.filter === status));
+    });
+    refreshMeetingVisibility();
+}
+
+const initialMeetingFilter = {{ ('live' if live_meetings else ('upcoming' if upcoming_meetings else 'completed')) | tojson }};
+filterMeetings(initialMeetingFilter);
 
 
 /* =====================================================
@@ -1702,6 +1677,7 @@ function filterMeetings() {
 </script>
 
 
+    <script src="{{ url_for('static', filename='js/meetiq.js') }}" defer></script>
 </body>
 
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Profile | MeetIQ</title>
+  <title>My Profile | MeetIQ Admin</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='meetiq.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
   <style>
@@ -23,19 +23,18 @@
   </style>
 </head>
 <body>
-  {% include "components/participant_sidebar.html" %}
-  <button type="button" class="sidebar-open" onclick="openSidebar()" aria-label="Open navigation" aria-controls="participantSidebar">☰</button>
+  {% include "admin/_sidebar.html" %}
   <main class="main"><div class="profile-page">
-    <header class="profile-heading"><h1>My Profile</h1><p>Manage your participant details and password.</p></header>
+    <header class="profile-heading"><h1>My Profile</h1><p>Manage your administrator details and password.</p></header>
     {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="flash-message {{ category }}" role="status">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
     <section class="profile-card">
-      <div class="profile-identity"><div class="avatar" aria-hidden="true">{{ profile.name[:1]|upper }}</div><div><h2>{{ profile.name }}</h2><p>Participant · {{ profile.email }}</p></div></div>
+      <div class="profile-identity"><div class="avatar" aria-hidden="true">{{ profile.name[:1]|upper }}</div><div><h2>{{ profile.name }}</h2><p>Administrator · {{ profile.email }}</p></div></div>
       <form class="profile-form" method="post">
         <h3 class="section-title">Profile details</h3>
-        <div class="field-grid"><label class="field">Full name<input name="name" value="{{ profile.name }}" autocomplete="name" required maxlength="100"></label><label class="field">Email address<input value="{{ profile.email }}" readonly><small>Your account email is fixed.</small></label><label class="field">Department<input name="department" value="{{ profile.department }}" maxlength="100"></label><label class="field">Year<input name="year" value="{{ profile.year }}" maxlength="50"></label><label class="field">Student / employee ID<input value="{{ profile.user_id }}" readonly></label></div>
+        <div class="field-grid"><label class="field">Full name<input name="name" value="{{ profile.name }}" autocomplete="name" required maxlength="100"></label><label class="field">Email address<input value="{{ profile.email }}" readonly aria-describedby="emailNote"><small id="emailNote">Your account email is fixed.</small></label></div>
         <h3 class="section-title">Change password <span class="muted">(optional)</span></h3>
         <div class="field-grid"><label class="field">Current password<input type="password" name="current_password" autocomplete="current-password"></label><label class="field">New password<input type="password" name="new_password" autocomplete="new-password" minlength="6"></label><label class="field">Confirm new password<input type="password" name="confirm_password" autocomplete="new-password" minlength="6"></label></div>
-        <div class="actions"><a class="button" href="{{ url_for('participant_dashboard') }}">Cancel</a><button class="button button-primary" type="submit">Save changes</button></div>
+        <div class="actions"><a class="button" href="{{ url_for('admin_dashboard') }}">Cancel</a><button class="button button-primary" type="submit">Save changes</button></div>
       </form>
     </section>
   </div></main>

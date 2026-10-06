@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>MeetIQ - Host Meeting</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #10131a;
+            color: white;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .meeting-header {
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            background: #171b24;
+            border-bottom: 1px solid #292f3d;
+        }
+
+        .meeting-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .meeting-title h1 {
+            font-size: 18px;
+        }
+
+        .live-badge {
+            background: #d93025;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .meeting-id {
+            color: #8993a8;
+            font-size: 12px;
+        }
+
+        .meeting-content {
+            height: calc(100vh - 64px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .video-area {
+            flex: 1;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit,
+                minmax(280px, 1fr)
+            );
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .video-card {
+            position: relative;
+            background: #1b202b;
+            border: 1px solid #2d3442;
+            border-radius: 14px;
+            min-height: 220px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-card.screen-share-card video { object-fit: contain; background: #05070b; }
+
+        .video-area.screen-sharing { grid-template-columns: minmax(0, 1fr) 220px; }
+        .video-area.screen-sharing .video-card.screen-share-card { grid-column: 1; grid-row: 1 / span 8; min-height: min(70vh, 720px); }
+        .video-area.screen-sharing .video-card:not(.screen-share-card) { min-height: 150px; }
+
+        .video-placeholder {
+            font-size: 45px;
+            color: #68738a;
+        }
+
+        .participant-name {
+            position: absolute;
+            left: 12px;
+            bottom: 12px;
+            background: rgba(0,0,0,0.65);
+            padding: 7px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .mic-indicator {
+            margin-left: 7px;
+            font-size: 13px;
+            color: #86efac;
+        }
+        .mic-indicator.off { color: #fca5a5; }
+        .participants-panel {
+            position: fixed;
+            z-index: 20;
+            top: 76px;
+            right: 16px;
+            width: min(360px, calc(100vw - 32px));
+            max-height: calc(100vh - 100px);
+            overflow-y: auto;
+            padding: 16px;
+            color: white;
+            background: #171b24;
+            border: 1px solid #343b4b;
+            border-radius: 14px;
+            box-shadow: 0 16px 48px #0008;
+        }
+        .participants-panel[hidden] { display: none; }
+        .panel-heading, .participant-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+        .participant-row { padding:12px 0; border-top:1px solid #292f3d; }
+        .participant-controls { display:flex; flex-wrap:wrap; gap:6px; }
+        .participant-controls button, .panel-close { border:1px solid #343b4b; border-radius:7px; padding:6px 8px; background:#222938; color:white; cursor:pointer; }
+
+        .host-label {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            background: rgba(0,0,0,0.65);
+            padding: 6px 9px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .controls {
+            height: 82px;
+            background: #171b24;
+            border-top: 1px solid #292f3d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .control-btn {
+            border: none;
+            background: #292f3d;
+            color: white;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            transition: 0.2s;
+        }
+
+        .control-btn:hover {
+            background: #3a4252;
+        }
+
+        .control-btn.active {
+            background: #ffffff;
+            color: #111;
+        }
+
+        .end-btn {
+            border: none;
+            background: #d93025;
+            color: white;
+            padding: 14px 22px;
+            border-radius: 28px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-left: 15px;
+        }
+
+        .end-btn:hover {
+            background: #b9231c;
+        }
+
+        .status-message {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2633;
+            border: 1px solid #343d4d;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-size: 12px;
+            display: none;
+        }
+
+        .attention-toast {
+            position: fixed;
+            top: 82px;
+            right: 24px;
+            z-index: 1500;
+            max-width: min(380px, calc(100vw - 32px));
+            padding: 14px 18px;
+            color: #fff7ed;
+            background: rgba(124, 45, 18, .96);
+            border: 1px solid rgba(251, 146, 60, .55);
+            border-radius: 12px;
+            box-shadow: 0 14px 38px rgba(0, 0, 0, .4);
+            font-size: 13px;
+            line-height: 1.45;
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity .18s ease, transform .18s ease;
+        }
+
+        .attention-toast.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .chat-toast {
+            position: fixed;
+            top: 150px;
+            right: 24px;
+            z-index: 1499;
+            max-width: min(380px, calc(100vw - 32px));
+            padding: 12px 16px;
+            color: #eef2ff;
+            background: rgba(23, 27, 36, .97);
+            border: 1px solid #4b5568;
+            border-radius: 12px;
+            box-shadow: 0 14px 38px rgba(0, 0, 0, .4);
+            font-size: 13px;
+            line-height: 1.45;
+            opacity: 0;
+            transform: translateY(-8px);
+            pointer-events: none;
+            transition: opacity .18s ease, transform .18s ease;
+        }
+
+        .chat-toast.visible { opacity: 1; transform: translateY(0); }
+.chat-panel {
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    width: 340px;
+    height: 430px;
+    background: #171b24;
+    border: 1px solid #343d4d;
+    border-radius: 14px;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 10px 35px rgba(0,0,0,0.4);
+}
+
+.chat-header {
+    height: 55px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #292f3d;
+}
+
+.chat-close {
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.chat-message {
+    margin-bottom: 12px;
+}
+
+.chat-message strong {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.chat-message span {
+    display: inline-block;
+    background: #292f3d;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    word-break: break-word;
+}
+
+.chat-input-area {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    border-top: 1px solid #292f3d;
+}
+
+.chat-input-area input {
+    flex: 1;
+    border: 1px solid #343d4d;
+    background: #0f131b;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    outline: none;
+}
+
+.chat-input-area button {
+    border: none;
+    background: white;
+    color: black;
+    padding: 0 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+    </style>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</head>
+
+<body>
+
+    <header class="meeting-header">
+
+        <div class="meeting-title">
+
+            <h1>
+                {{ meeting.title }}
+            </h1>
+
+            <span class="live-badge">
+                🔴 LIVE
+            </span>
+
+        </div>
+
+        <div class="meeting-id">
+
+            Meeting ID:
+            {{ meeting._id }}
+
+        </div>
+
+    </header>
+
+
+    <main class="meeting-content">
+
+        <section class="video-area">
+
+            <!-- HOST VIDEO -->
+
+            <div class="video-card">
+
+                <video
+                    id="hostVideo"
+                    autoplay
+                    muted
+                    playsinline>
+                </video>
+
+                <div
+                    class="video-placeholder"
+                    id="hostPlaceholder">
+                    👤
+                </div>
+
+                <div class="participant-name">
+                    {{ session_user_name or "Host" }}
+                    <span class="mic-indicator" id="hostMicIndicator" title="Microphone on">🎙️</span>
+                </div>
+
+                <div class="host-label">
+                    HOST
+                </div>
+
+            </div>
+
+
+            <!-- PARTICIPANTS WILL APPEAR HERE -->
+
+            <div class="video-card">
+
+                <div class="video-placeholder">
+                    👥
+                </div>
+
+                <div class="participant-name">
+                    Waiting for participants...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- CONTROLS -->
+
+        <div class="controls">
+
+            <button
+                class="control-btn active"
+                id="micButton"
+                onclick="toggleMicrophone()"
+                title="Microphone">
+                🎤
+            </button>
+
+            <button
+                class="control-btn active"
+                id="cameraButton"
+                onclick="toggleCamera()"
+                title="Camera">
+                📹
+            </button>
+
+            <button
+                class="control-btn"
+                id="screenButton"
+                onclick="toggleScreenSharing()"
+                title="Share Screen">
+                🖥️
+            </button>
+            <button
+                class="control-btn"
+                onclick="showParticipants()"
+                title="Participants">
+                👥
+            </button>
+
+            <button
+                class="control-btn"
+                onclick="openChat()"
+                title="Chat">
+                💬
+            </button>
+
+            <form
+                action="{{ url_for('end_meeting', meeting_id=meeting._id) }}"
+                method="POST"
+                onsubmit="return confirm('Are you sure you want to end this meeting?');">
+
+                <button
+                    type="submit"
+                    class="end-btn">
+                    🔴 End Meeting
+                </button>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <div
+        class="status-message"
+        id="statusMessage">
+    </div>
+    <div class="attention-toast" id="attentionToast" role="status" aria-live="polite"></div>
+    <aside class="participants-panel" id="participantsPanel" hidden>
+        <div class="panel-heading"><strong>Participants</strong><button class="panel-close" type="button" onclick="showParticipants()">Close</button></div>
+        <div id="participantRoster"><p style="color:#9ca3af;padding:14px 0">No participants have joined yet.</p></div>
+    </aside>
+    <div class="chat-toast" id="chatToast" role="status" aria-live="polite"></div>
+<!-- CHAT PANEL -->
+
+<div class="chat-panel" id="chatPanel">
+
+    <div class="chat-header">
+        <strong>Meeting Chat</strong>
+
+        <button
+            onclick="closeChat()"
+            class="chat-close">
+            ✕
+        </button>
+    </div>
+
+    <div
+        class="chat-messages"
+        id="chatMessages">
+    </div>
+
+    <div class="chat-input-area">
+
+        <input
+            type="text"
+            id="chatInput"
+            placeholder="Type a message..."
+            autocomplete="off"
+            onkeydown="handleChatKey(event)">
+
+        <button
+            onclick="sendChatMessage()">
+            Send
+        </button>
+
+    </div>
+
+</div>
+
+    <script>
+const socket = io();
+
+const meetingId = "{{ meeting._id }}";
+        let localStream = null;
+
+        let microphoneEnabled = true;
+
+        let cameraEnabled = true;
+
+        let screenStream = null;
+let hostCameraPromise = null;
+let peerConnections = {};
+let pendingIceCandidates = {};
+socket.on("connect", async function() {
+
+    console.log("Connected to MeetIQ meeting server.");
+
+    socket.emit(
+        "join_meeting",
+        {
+            meeting_id: meetingId
+        }
+    );
+
+    hostCameraPromise = startHostCamera();
+    await hostCameraPromise;
+
+});
+
+let attentionToastTimer = null;
+const attentionToastQueue = [];
+
+function showNextAttentionToast() {
+    if (attentionToastTimer || attentionToastQueue.length === 0) return;
+    const toast = document.getElementById("attentionToast");
+    if (!toast) return;
+    const data = attentionToastQueue.shift();
+    toast.textContent = "⚠️ " + (data.message || ((data.participant_name || "A participant") + " has been inattentive for 1 minute."));
+    toast.classList.add("visible");
+    attentionToastTimer = setTimeout(function() {
+        toast.classList.remove("visible");
+        attentionToastTimer = null;
+        showNextAttentionToast();
+    }, 3000);
+}
+
+socket.on("attention_alert", function(data) {
+    attentionToastQueue.push(data);
+    showNextAttentionToast();
+});
+
+socket.on("toxicity_alert", function(data) {
+    attentionToastQueue.push({
+        message: data && data.message ? data.message : "Potentially abusive language detected."
+    });
+    showNextAttentionToast();
+});
+
+socket.on("toxicity_moderation", function(data) {
+    if (!data || !data.message) return;
+    attentionToastQueue.push({message: data.message});
+    showNextAttentionToast();
+});
+
+
+socket.on("participant_joined", async function(data) {
+
+    console.log(
+        "Participant joined the meeting."
+    );
+
+    showStatus(
+        "A participant joined the meeting."
+    );
+
+    const participantId =
+        data.participant_id;
+
+    if (!participantId) return;
+    updateParticipantRoster(participantId, data.participant_name || "Participant", true);
+    if (!localStream && hostCameraPromise) await hostCameraPromise;
+
+    if (!participantId) {
+
+        console.error(
+            "Participant ID was not received."
+        );
+
+        return;
+    }
+
+    console.log(
+        "Creating WebRTC connection for:",
+        participantId
+    );
+
+    if (peerConnections[participantId]) {
+        peerConnections[participantId].close();
+    }
+    pendingIceCandidates[participantId] = [];
+
+    const peerConnection =
+        new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: "stun:stun.l.google.com:19302"
+                }
+            ]
+        });
+
+
+    peerConnections[participantId] =
+        peerConnection;
+    peerConnection.ontrack = function(event) {
+
+    console.log(
+        "Participant media received:",
+        participantId
+    );
+
+    let remoteVideo =
+        document.getElementById(
+            "remote-" + participantId
+        );
+
+    if (!remoteVideo) {
+
+        const videoCard =
+            document.createElement("div");
+
+        videoCard.className =
+            "video-card";
+
+        videoCard.id =
+            "participant-" + participantId;
+
+        videoCard.innerHTML = `
+            <video
+                id="remote-${participantId}"
+                autoplay
+                playsinline>
+            </video>
+
+            <div class="participant-name">
+                ${data.participant_name || "Participant"}
+            </div>
+        `;
+
+        document
+            .querySelector(".video-area")
+            .appendChild(videoCard);
+
+        remoteVideo =
+            document.getElementById(
+                "remote-" + participantId
+            );
+        const newCard = remoteVideo && remoteVideo.closest(".video-card");
+        const nameLabel = newCard && newCard.querySelector(".participant-name");
+        const participantState = participantRosterState[participantId];
+        if (nameLabel && participantState) {
+            const mic = document.createElement("span");
+            mic.className = "mic-indicator " + (participantState.micEnabled ? "" : "off");
+            mic.title = "Microphone " + (participantState.micEnabled ? "on" : "off");
+            mic.textContent = participantState.micEnabled ? "🎙️" : "🔇";
+            nameLabel.appendChild(mic);
+        }
+    }
+
+    remoteVideo.srcObject = event.streams[0];
+    remoteVideo.muted = false;
+    remoteVideo.volume = 1;
+    remoteVideo.play().catch(function(error) {
+        console.log("Participant audio playback needs user interaction:", error);
+        const retryAudioOnNextGesture = function() {
+            remoteVideo.muted = false;
+            remoteVideo.volume = 1;
+            remoteVideo.play().catch(function(retryError) {
+                console.error("Could not start participant audio:", retryError);
+            });
+        };
+        document.addEventListener("pointerdown", retryAudioOnNextGesture, {once:true});
+    });
+
+};
+
+    // Add host camera and microphone
+    if (localStream) {
+
+        localStream
+            .getTracks()
+            .forEach(function(track) {
+
+                peerConnection.addTrack(
+                    track,
+                    localStream
+                );
+
+            });
+
+        if (screenStream) {
+            const screenSender = peerConnection.getSenders().find(function(sender) {
+                return sender.track && sender.track.kind === "video";
+            });
+            const activeScreenTrack = screenStream.getVideoTracks()[0];
+            if (screenSender && activeScreenTrack) await screenSender.replaceTrack(activeScreenTrack);
+        }
+
+    }
+
+
+    // Send ICE candidates
+    peerConnection.onicecandidate =
+        function(event) {
+
+            if (event.candidate) {
+
+                socket.emit(
+                    "webrtc_ice_candidate",
+                    {
+                        meeting_id: meetingId,
+                        target_id: participantId,
+                        candidate:
+                            event.candidate
+                    }
+                );
+
+            }
+
+        };
+
+
+    // Create WebRTC offer
+    const offer =
+        await peerConnection.createOffer();
+
+    await peerConnection.setLocalDescription(
+        offer
+    );
+
+
+    // Send offer to participant
+    socket.emit(
+        "webrtc_offer",
+        {
+            meeting_id: meetingId,
+            target_id: participantId,
+            offer: offer
+        }
+    );
+
+    console.log(
+        "WebRTC offer sent to:",
+        participantId
+    );
+
+});
+
+const participantRosterState = {};
+function updateParticipantRoster(participantId, name, joined, micEnabled, cameraEnabled) {
+    if (joined) {
+        participantRosterState[participantId] = {
+            name: name || participantRosterState[participantId]?.name || "Participant",
+            micEnabled: micEnabled ?? participantRosterState[participantId]?.micEnabled ?? true,
+            cameraEnabled: cameraEnabled ?? participantRosterState[participantId]?.cameraEnabled ?? true,
+            screenShareAllowed: participantRosterState[participantId]?.screenShareAllowed ?? true
+        };
+    } else {
+        delete participantRosterState[participantId];
+    }
+    const list = document.getElementById("participantRoster");
+    if (!list) return;
+    list.replaceChildren();
+    const ids = Object.keys(participantRosterState);
+    if (!ids.length) {
+        list.innerHTML = '<p style="color:#9ca3af;padding:14px 0">No participants have joined yet.</p>';
+        return;
+    }
+    ids.forEach(function(id) {
+        const participant = participantRosterState[id];
+        const row = document.createElement("div");
+        row.className = "participant-row";
+        const name = document.createElement("span");
+        name.textContent = participant.name;
+        const mic = document.createElement("span");
+        mic.className = "mic-indicator " + (participant.micEnabled ? "" : "off");
+        mic.title = "Microphone " + (participant.micEnabled ? "on" : "off");
+        mic.textContent = participant.micEnabled ? "🎙️" : "🔇";
+        name.appendChild(mic);
+        const controls = document.createElement("div");
+        controls.className = "participant-controls";
+        [[participant.micEnabled ? "Mute" : "Ask to unmute", participant.micEnabled ? "mute_participant_mic" : "request_mic_on"], [participant.cameraEnabled ? "Turn video off" : "Ask to turn on video", participant.cameraEnabled ? "turn_camera_off" : "request_camera_on"], [participant.screenShareAllowed ? "Block sharing" : "Allow sharing", "toggle_screen_permission"]].forEach(function(item) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = item[0];
+            button.onclick = function() {
+                socket.emit("participant_control", {meeting_id: meetingId, target_id: id, action: item[1]});
+            };
+            controls.appendChild(button);
+        });
+        row.append(name, controls);
+        list.appendChild(row);
+    });
+}
+
+socket.on("participant_media_state", function(data) {
+    if (!data || !data.participant_id) return;
+    updateParticipantRoster(data.participant_id, data.participant_name, true, data.mic_enabled, data.camera_enabled);
+    if (participantRosterState[data.participant_id]) participantRosterState[data.participant_id].screenShareAllowed = data.screen_share_allowed !== false;
+    const card = document.getElementById("participant-" + data.participant_id);
+    const label = card && card.querySelector(".participant-name");
+    if (label) {
+        let mic = label.querySelector(".mic-indicator");
+        if (!mic) { mic = document.createElement("span"); mic.className = "mic-indicator"; label.appendChild(mic); }
+        mic.classList.toggle("off", !data.mic_enabled);
+        mic.title = "Microphone " + (data.mic_enabled ? "on" : "off");
+        mic.textContent = data.mic_enabled ? "🎙️" : "🔇";
+    }
+    updateParticipantRoster(data.participant_id, data.participant_name, true, data.mic_enabled, data.camera_enabled);
+});
+socket.on("screen_share_status", function(data) {
+    const area = document.querySelector(".video-area");
+    const card = data && data.participant_id && document.getElementById("participant-" + data.participant_id);
+    if (data && data.sharing && card) {
+        card.classList.add("screen-share-card");
+        if (area) area.classList.add("screen-sharing");
+    } else if (card) {
+        card.classList.remove("screen-share-card");
+        if (area && !area.querySelector(".screen-share-card")) area.classList.remove("screen-sharing");
+    }
+});
+socket.on("participant_control_response", function(data) {
+    if (!data) return;
+    showStatus((data.participant_name || "Participant") + (data.accepted ? " accepted your request." : " declined your request."));
+});
+socket.on("webrtc_answer", async function(data) {
+
+    console.log(
+        "WebRTC answer received from participant."
+    );
+
+    const participantId =
+        data.sender_id;
+
+    const peerConnection =
+        peerConnections[participantId];
+
+    if (!peerConnection) {
+
+        console.error(
+            "No WebRTC connection found for:",
+            participantId
+        );
+
+        return;
+    }
+
+    try {
+
+        await peerConnection.setRemoteDescription(
+            new RTCSessionDescription(
+                data.answer
+            )
+        );
+
+        const queuedCandidates = pendingIceCandidates[participantId] || [];
+        pendingIceCandidates[participantId] = [];
+        for (const candidate of queuedCandidates) {
+            await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+        }
+
+        console.log(
+            "Participant WebRTC answer accepted."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Could not set WebRTC answer:",
+            error
+        );
+
+    }
+
+});
+socket.on("webrtc_ice_candidate", async function(data) {
+
+    console.log(
+        "ICE candidate received."
+    );
+
+    const participantId =
+        data.sender_id;
+
+    const peerConnection =
+        peerConnections[participantId];
+
+    if (!peerConnection || !peerConnection.remoteDescription) {
+        pendingIceCandidates[participantId] = pendingIceCandidates[participantId] || [];
+        pendingIceCandidates[participantId].push(data.candidate);
+        return;
+    }
+
+    try {
+
+        await peerConnection.addIceCandidate(
+            new RTCIceCandidate(
+                data.candidate
+            )
+        );
+
+        console.log(
+            "ICE candidate added successfully."
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Could not add ICE candidate:",
+            error
+        );
+
+    }
+
+});
+
+socket.on("participant_left", function(data) {
+
+    console.log(
+        "Participant left the meeting."
+    );
+
+    showStatus(
+        "A participant left the meeting."
+    );
+    if (data.participant_id) updateParticipantRoster(data.participant_id, "", false);
+
+    if (data.participant_id && peerConnections[data.participant_id]) {
+        peerConnections[data.participant_id].close();
+        delete peerConnections[data.participant_id];
+        const videoCard = document.getElementById("participant-" + data.participant_id);
+        if (videoCard) videoCard.remove();
+        const videoArea = document.querySelector(".video-area");
+        if (videoArea && !videoArea.querySelector(".screen-share-card")) videoArea.classList.remove("screen-sharing");
+    }
+
+});
+
+function showParticipants() {
+    const panel = document.getElementById("participantsPanel");
+    if (panel) panel.hidden = !panel.hidden;
+}
+        async function startHostCamera() {
+
+            if (localStream) return localStream;
+
+            try {
+
+                localStream =
+                    await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: true
+                    });
+
+                sendHostMediaState();
+
+                const video =
+                    document.getElementById("hostVideo");
+
+                video.srcObject = localStream;
+                await video.play().catch(function(error) {
+                    console.log("Host video autoplay was blocked:", error);
+                });
+
+                document.getElementById(
+                    "hostPlaceholder"
+                ).style.display = "none";
+
+                showStatus(
+                    "Camera and microphone connected."
+                );
+
+                return localStream;
+
+            } catch (error) {
+
+                console.error(
+                    "Could not access camera/microphone:",
+                    error
+                );
+
+                showStatus(
+                    "Camera or microphone permission was denied."
+                );
+
+                return null;
+
+            }
+
+        }
+
+
+        function toggleMicrophone() {
+
+            if (!localStream) {
+                return;
+            }
+
+            const audioTracks =
+                localStream.getAudioTracks();
+
+            if (audioTracks.length === 0) {
+                return;
+            }
+
+            microphoneEnabled =
+                !microphoneEnabled;
+
+            audioTracks[0].enabled =
+                microphoneEnabled;
+
+            const button =
+                document.getElementById("micButton");
+
+            button.textContent =
+                microphoneEnabled ? "🎤" : "🔇";
+
+            button.classList.toggle(
+                "active",
+                microphoneEnabled
+            );
+
+            const indicator = document.getElementById("hostMicIndicator");
+            if (indicator) {
+                indicator.textContent = microphoneEnabled ? "🎙️" : "🔇";
+                indicator.classList.toggle("off", !microphoneEnabled);
+                indicator.title = "Microphone " + (microphoneEnabled ? "on" : "off");
+            }
+            sendHostMediaState();
+
+        }
+
+        function sendHostMediaState() {
+            if (socket && socket.connected) {
+                socket.emit("host_media_state", {meeting_id: meetingId, mic_enabled: microphoneEnabled});
+            }
+        }
+
+
+        function toggleCamera() {
+
+            if (!localStream) {
+                return;
+            }
+
+            const videoTracks =
+                localStream.getVideoTracks();
+
+            if (videoTracks.length === 0) {
+                return;
+            }
+
+            cameraEnabled =
+                !cameraEnabled;
+
+            videoTracks[0].enabled =
+                cameraEnabled;
+
+            const button =
+                document.getElementById("cameraButton");
+
+            button.textContent =
+                cameraEnabled ? "📹" : "🚫";
+
+            button.classList.toggle(
+                "active",
+                cameraEnabled
+            );
+
+        }
+
+
+        async function shareScreen() {
+
+    try {
+
+        screenStream =
+            await navigator.mediaDevices.getDisplayMedia({
+                video: true
+            });
+
+        const screenTrack =
+            screenStream.getVideoTracks()[0];
+
+        // Replace the camera track in every WebRTC connection
+       Object.values(peerConnections).forEach(
+    function(peerConnection) {
+
+        const videoSender =
+            peerConnection
+                .getSenders()
+                .find(
+                    function(sender) {
+                        return sender.track &&
+                               sender.track.kind === "video";
+                    }
+                );
+
+        if (videoSender) {
+
+            videoSender
+                .replaceTrack(screenTrack)
+                .then(function() {
+
+                    console.log(
+                        "Screen track sent to participant."
+                    );
+
+                })
+                .catch(function(error) {
+
+                    console.error(
+                        "Could not replace camera with screen:",
+                        error
+                    );
+
+                });
+
+        }
+
+    }
+);
+
+        // Show shared screen on host
+        const video =
+            document.getElementById("hostVideo");
+
+        video.srcObject =
+            screenStream;
+
+        const screenButton =
+            document.getElementById("screenButton");
+
+        screenButton.textContent = "⏹️";
+
+        screenButton.classList.add("active");
+
+        showStatus(
+            "Screen sharing started."
+        );
+        document.querySelector(".video-area")?.classList.add("screen-sharing");
+        document.getElementById("hostVideo")?.closest(".video-card")?.classList.add("screen-share-card");
+        socket.emit("screen_share_status", {meeting_id: meetingId, sharing:true});
+
+        // Detect when user stops sharing
+        screenTrack.addEventListener(
+            "ended",
+            async function() {
+
+                await stopScreenSharing();
+
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Screen sharing failed:",
+            error
+        );
+
+        showStatus(
+            "Screen sharing was cancelled."
+        );
+
+    }
+
+}
+async function stopScreenSharing() {
+
+    if (!screenStream) {
+        return;
+    }
+
+    const screenTrack =
+        screenStream.getVideoTracks()[0];
+
+    // Stop screen capture
+    screenTrack.stop();
+
+    // Restore camera track
+    if (localStream) {
+
+        const cameraTrack =
+            localStream.getVideoTracks()[0];
+
+        Object.values(peerConnections).forEach(
+            function(peerConnection) {
+
+                const sender =
+                    peerConnection
+                        .getSenders()
+                        .find(
+                            function(sender) {
+                                return sender.track &&
+                                       sender.track.kind === "video";
+                            }
+                        );
+
+                if (sender && cameraTrack) {
+
+                    sender.replaceTrack(
+                        cameraTrack
+                    );
+
+                }
+
+            }
+        );
+
+        // Show camera again on host
+        const video =
+            document.getElementById("hostVideo");
+
+        video.srcObject =
+            localStream;
+
+    }
+
+    screenStream = null;
+    document.querySelector(".video-area")?.classList.remove("screen-sharing");
+    document.getElementById("hostVideo")?.closest(".video-card")?.classList.remove("screen-share-card");
+    socket.emit("screen_share_status", {meeting_id: meetingId, sharing:false});
+
+    const screenButton =
+        document.getElementById("screenButton");
+
+    screenButton.textContent = "🖥️";
+
+    screenButton.classList.remove("active");
+
+    showStatus(
+        "Screen sharing stopped."
+    );
+
+}
+async function stopScreenSharing() {
+
+    if (!screenStream) {
+        return;
+    }
+
+    const screenTrack =
+        screenStream.getVideoTracks()[0];
+
+    screenTrack.stop();
+
+    if (localStream) {
+
+        const cameraTrack =
+            localStream.getVideoTracks()[0];
+
+        Object.values(peerConnections).forEach(
+            function(peerConnection) {
+
+                const sender =
+                    peerConnection
+                        .getSenders()
+                        .find(
+                            function(sender) {
+                                return sender.track &&
+                                       sender.track.kind === "video";
+                            }
+                        );
+
+                if (sender && cameraTrack) {
+                    sender.replaceTrack(cameraTrack);
+                }
+
+            }
+        );
+
+        const video =
+            document.getElementById("hostVideo");
+
+        video.srcObject = localStream;
+    }
+
+    screenStream = null;
+
+    const screenButton =
+        document.getElementById("screenButton");
+
+    screenButton.textContent = "🖥️";
+
+    screenButton.classList.remove("active");
+
+    showStatus(
+        "Screen sharing stopped."
+    );
+}
+
+
+/* ADD IT HERE */
+async function toggleScreenSharing() {
+
+    if (screenStream) {
+        await stopScreenSharing();
+    } else {
+        await shareScreen();
+    }
+
+}
+
+       function openChat() {
+
+    const chatPanel =
+        document.getElementById("chatPanel");
+
+    if (chatPanel) {
+        chatPanel.style.display = "flex";
+    }
+
+    const chatInput =
+        document.getElementById("chatInput");
+
+    if (chatInput) {
+        chatInput.focus();
+    }
+
+}
+function closeChat() {
+
+    const chatPanel =
+        document.getElementById("chatPanel");
+
+    if (chatPanel) {
+        chatPanel.style.display = "none";
+    }
+
+}
+
+
+function handleChatKey(event) {
+
+    if (event.key === "Enter") {
+
+        event.preventDefault();
+
+        sendChatMessage();
+
+    }
+
+}
+
+
+function sendChatMessage() {
+
+    const input =
+        document.getElementById("chatInput");
+
+    if (!input) {
+        return;
+    }
+
+    const message =
+        input.value.trim();
+
+    if (!message) {
+        return;
+    }
+
+    socket.emit(
+        "send_chat_message",
+        {
+            meeting_id: meetingId,
+            message: message
+        }
+    );
+
+    input.value = "";
+
+}
+
+
+socket.on(
+    "receive_chat_message",
+    function(data) {
+
+        const messages =
+            document.getElementById("chatMessages");
+
+        if (!messages) {
+            return;
+        }
+
+        const messageElement =
+            document.createElement("div");
+
+        messageElement.className =
+            "chat-message";
+
+        const sender =
+            document.createElement("strong");
+
+        sender.textContent =
+            data.sender_name || "User";
+
+        const text =
+            document.createElement("span");
+
+        text.textContent =
+            data.message;
+
+        messageElement.appendChild(sender);
+        messageElement.appendChild(text);
+
+        messages.appendChild(messageElement);
+
+        messages.scrollTop =
+            messages.scrollHeight;
+
+        showChatToast(data);
+
+    }
+);
+
+let chatToastTimer = null;
+function showChatToast(data) {
+    const toast = document.getElementById("chatToast");
+    if (!toast) return;
+    toast.textContent = "💬 " + (data.sender_name || "User") + ": " + (data.message || "");
+    toast.classList.add("visible");
+    if (chatToastTimer) clearTimeout(chatToastTimer);
+    chatToastTimer = setTimeout(function() {
+        toast.classList.remove("visible");
+        chatToastTimer = null;
+    }, 3000);
+}
+
+        function showStatus(message) {
+
+            const element =
+                document.getElementById(
+                    "statusMessage"
+                );
+
+            element.textContent = message;
+
+            element.style.display = "block";
+
+            setTimeout(
+                function() {
+
+                    element.style.display = "none";
+
+                },
+                2500
+            );
+
+        }
+
+
+        window.addEventListener(
+            "beforeunload",
+            function() {
+
+                if (localStream) {
+
+                    localStream
+                        .getTracks()
+                        .forEach(
+                            track => track.stop()
+                        );
+
+                }
+
+                if (screenStream) {
+
+                    screenStream
+                        .getTracks()
+                        .forEach(
+                            track => track.stop()
+                        );
+
+                }
+
+            }
+        );
+
+
+    </script>
+
+</body>
+
+</html>
