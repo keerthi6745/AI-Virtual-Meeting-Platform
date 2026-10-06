@@ -1,10 +1,13 @@
 from flask import Flask, Response, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from flask_mail import Mail
 from flask_mail import Message
+from html import escape as html_escape
+from urllib.parse import urlsplit
 import csv
 import hmac
 import io
@@ -99,6 +102,7 @@ app = Flask(
     static_folder=str(FRONTEND_DIR / "static"),
     static_url_path="/static"
 )
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 IS_PRODUCTION = os.getenv("APP_ENV", "").strip().lower() == "production"
 secret_key = os.getenv("SECRET_KEY")
@@ -168,12 +172,67 @@ def handle_socket_disconnect():
 
 app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
 app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 587))
-app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "True") == "True"
+app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "True").strip().lower() in {"true", "1", "yes"}
+app.config["MAIL_USE_SSL"] = os.getenv("MAIL_USE_SSL", "False").strip().lower() in {"true", "1", "yes"}
+app.config["MAIL_TIMEOUT"] = int(os.getenv("MAIL_TIMEOUT", 20))
 app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
 
 mail = Mail(app)
+
+
+def safe_next_path(value):
+    """Allow only same-site absolute paths for post-login redirects."""
+    if not value or "\\" in value:
+        return None
+    parsed = urlsplit(value)
+    if parsed.scheme or parsed.netloc or not parsed.path.startswith("/") or parsed.path.startswith("//"):
+        return None
+    return value
+
+
+def external_app_url(endpoint, **values):
+    """Build links using the public tunnel origin when one is configured."""
+    public_base = os.getenv("MEETIQ_PUBLIC_URL", "").strip().rstrip("/")
+    if public_base:
+        path = url_for(endpoint, **values)
+        return f"{public_base}/{path.lstrip('/')}"
+    return url_for(endpoint, _external=True, **values)
+
+
+def send_invitation_email(recipient, subject, body, action_url, action_label):
+    """Send a plain-text and clickable HTML meeting invitation."""
+    sender = (
+        app.config.get("MAIL_DEFAULT_SENDER")
+        or app.config.get("MAIL_USERNAME")
+    )
+    try:
+        if not sender:
+            raise RuntimeError("MAIL_DEFAULT_SENDER or MAIL_USERNAME is not configured")
+
+        message = Message(
+            subject=subject,
+            sender=sender,
+            recipients=[recipient]
+        )
+        message.body = f"{body.rstrip()}\n\n{action_label}: {action_url}"
+        paragraphs = "".join(
+            f"<p>{html_escape(line)}</p>" for line in body.splitlines() if line.strip()
+        )
+        message.html = (
+            '<div style="font-family:Arial,sans-serif;color:#172033;line-height:1.6">'
+            f"{paragraphs}"
+            f'<p><a href="{html_escape(action_url, quote=True)}" '
+            'style="display:inline-block;padding:12px 18px;border-radius:8px;'
+            'background:#6548ef;color:#fff;text-decoration:none;font-weight:600">'
+            f"{html_escape(action_label)}</a></p></div>"
+        )
+        mail.send(message)
+        return True
+    except Exception as email_error:
+        print("MeetIQ: Invitation email could not be sent:", email_error)
+        return False
 
 # =========================================================
 # TEMPORARY USER STORAGE
@@ -549,6 +608,8 @@ def admin_register():
 )
 def participant_login():
 
+    next_url = safe_next_path(request.values.get("next", ""))
+
     if request.method == "POST":
 
         login_value = request.form.get(
@@ -570,7 +631,7 @@ def participant_login():
             )
 
             return redirect(
-                url_for("participant_login")
+                url_for("participant_login", next=next_url)
             )
 
         # Find participant
@@ -595,9 +656,7 @@ def participant_login():
                 "success"
             )
 
-            return redirect(
-                url_for("participant_dashboard")
-            )
+            return redirect(next_url or url_for("participant_dashboard"))
 
         # Invalid credentials
         flash(
@@ -606,11 +665,12 @@ def participant_login():
         )
 
         return redirect(
-            url_for("participant_login")
+            url_for("participant_login", next=next_url)
         )
 
     return render_template(
-        "auth/participant_login.html"
+        "auth/participant_login.html",
+        next_url=next_url
     )
 
 
@@ -623,6 +683,16 @@ def participant_login():
     methods=["GET", "POST"]
 )
 def participant_register():
+
+    next_url = safe_next_path(request.values.get("next", ""))
+    invite_email = request.values.get("email", "").strip().lower()
+
+    def registration_url():
+        return url_for(
+            "participant_register",
+            next=next_url,
+            email=invite_email or None
+        )
 
     if request.method == "POST":
 
@@ -678,7 +748,7 @@ def participant_register():
             )
 
             return redirect(
-                url_for("participant_register")
+                registration_url()
             )
 
         # Password confirmation
@@ -690,7 +760,7 @@ def participant_register():
             )
 
             return redirect(
-                url_for("participant_register")
+                registration_url()
             )
 
         # Minimum password length
@@ -702,7 +772,7 @@ def participant_register():
             )
 
             return redirect(
-                url_for("participant_register")
+                registration_url()
             )
 
                # Check duplicate email
@@ -716,7 +786,7 @@ def participant_register():
             )
 
             return redirect(
-                url_for("participant_register")
+                registration_url()
             )
 
         # Check duplicate Student/Employee ID
@@ -730,7 +800,7 @@ def participant_register():
             )
 
             return redirect(
-                url_for("participant_register")
+                registration_url()
             )
 
         # Create participant
@@ -773,11 +843,13 @@ def participant_register():
         )
 
         return redirect(
-            url_for("participant_login")
+            url_for("participant_login", next=next_url)
         )
 
     return render_template(
-        "auth/participant_register.html"
+        "auth/participant_register.html",
+        next_url=next_url,
+        invite_email=invite_email
     )
 
 
@@ -1472,6 +1544,40 @@ def remove_invitation(meeting_id, participant_id):
     return redirect(url_for("meeting_details", meeting_id=meeting_id))
 
 
+@app.route("/admin/meetings/<meeting_id>/remove-pending-invitation/<email>", methods=["POST"])
+def remove_pending_invitation(meeting_id, email):
+
+    if session.get("role") != "admin":
+        flash("Please sign in as an administrator.", "error")
+        return redirect(url_for("admin_login"))
+
+    from bson.objectid import ObjectId
+
+    normalized_email = email.strip().lower()
+    try:
+        result = meetings_collection.update_one(
+            {
+                "_id": ObjectId(meeting_id),
+                "created_by_email": session.get("user_id"),
+                "pending_invites.email": normalized_email
+            },
+            {
+                "$pull": {
+                    "pending_invites": {"email": normalized_email}
+                }
+            }
+        )
+    except Exception:
+        result = None
+
+    if not result or result.modified_count == 0:
+        flash("Pending invitation not found or you are not authorized.", "error")
+    else:
+        flash("Pending invitation removed successfully!", "success")
+
+    return redirect(url_for("meeting_details", meeting_id=meeting_id))
+
+
 # =========================================================
 # INVITE PARTICIPANTS
 # =========================================================
@@ -1529,6 +1635,7 @@ def invite_participants(meeting_id):
     seen_emails = set()
     newly_invited = []
     newly_pending = []
+    pending_to_email = []
     for invitee in invitees:
         email = invitee["email"]
         if email in seen_emails or email == (session.get("user_id") or "").lower():
@@ -1545,6 +1652,9 @@ def invite_participants(meeting_id):
             pending_item = {"name": invitee["name"], "email": email}
             pending_by_email[email] = pending_item
             newly_pending.append(pending_item)
+            pending_to_email.append(pending_item)
+        else:
+            pending_to_email.append(pending_by_email[email])
 
     pending_invites = list(pending_by_email.values())
     meetings_collection.update_one(
@@ -1553,8 +1663,10 @@ def invite_participants(meeting_id):
     )
 
     meeting_id_url = str(meeting["_id"])
-    meeting_link = url_for("participant_meeting", meeting_id=meeting_id_url, _external=True)
-    registration_link = url_for("participant_register", _external=True)
+    meeting_path = url_for("participant_meeting", meeting_id=meeting_id_url)
+    meeting_link = external_app_url("participant_meeting", meeting_id=meeting_id_url)
+    emails_sent = 0
+    emails_failed = 0
     for participant in newly_invited:
         participant_email = participant.get("email")
         create_notification(
@@ -1567,24 +1679,43 @@ def invite_participants(meeting_id):
             message=f"You have been invited to {meeting.get('title', 'a meeting')}."
         )
         if participant_email:
-            body = f"Hello {participant.get('name', 'Participant')},\n\nYou have been invited to {meeting.get('title', 'a meeting')}.\nDate: {meeting.get('formatted_date', meeting.get('date', ''))}\nTime: {meeting.get('formatted_time', meeting.get('time', ''))}\n\nView the meeting after signing in: {meeting_link}"
-            try:
-                msg = Message(subject=f"Meeting Invitation - {meeting.get('title', 'MeetIQ Meeting')}", sender=session.get("user_id"), recipients=[participant_email])
-                msg.body = body
-                mail.send(msg)
-            except Exception as email_error:
-                print("Invitation email failed for", participant_email, email_error)
+            body = f"Hello {participant.get('name', 'Participant')},\n\nYou have been invited to {meeting.get('title', 'a meeting')}.\nDate: {meeting.get('formatted_date', meeting.get('date', ''))}\nTime: {meeting.get('formatted_time', meeting.get('time', ''))}\n\nSign in to your MeetIQ account to view the meeting."
+            if send_invitation_email(
+                participant_email,
+                f"Meeting Invitation - {meeting.get('title', 'MeetIQ Meeting')}",
+                body,
+                meeting_link,
+                "View meeting"
+            ):
+                emails_sent += 1
+            else:
+                emails_failed += 1
 
-    for pending in newly_pending:
-        body = f"Hello {pending['name']},\n\nYou have been invited to {meeting.get('title', 'a meeting')}.\nDate: {meeting.get('formatted_date', meeting.get('date', ''))}\nTime: {meeting.get('formatted_time', meeting.get('time', ''))}\n\nRegister with this email address to access the meeting: {registration_link}"
-        try:
-            msg = Message(subject=f"Meeting Invitation - {meeting.get('title', 'MeetIQ Meeting')}", sender=session.get("user_id"), recipients=[pending["email"]])
-            msg.body = body
-            mail.send(msg)
-        except Exception as email_error:
-            print("Invitation email failed for", pending["email"], email_error)
+    for pending in pending_to_email:
+        registration_link = external_app_url(
+            "participant_register",
+            email=pending["email"],
+            next=meeting_path
+        )
+        body = f"Hello {pending['name']},\n\nYou have been invited to {meeting.get('title', 'a meeting')}.\nDate: {meeting.get('formatted_date', meeting.get('date', ''))}\nTime: {meeting.get('formatted_time', meeting.get('time', ''))}\n\nRegister with this email address to access the meeting."
+        if send_invitation_email(
+            pending["email"],
+            f"Meeting Invitation - {meeting.get('title', 'MeetIQ Meeting')}",
+            body,
+            registration_link,
+            "Register and view meeting"
+        ):
+            emails_sent += 1
+        else:
+            emails_failed += 1
 
-    flash(f"Added {len(newly_invited) + len(newly_pending)} participant invitation(s).", "success")
+    flash(
+        f"Added {len(newly_invited) + len(newly_pending)} participant invitation(s); "
+        f"sent {emails_sent} email(s).",
+        "success"
+    )
+    if emails_failed:
+        flash(f"{emails_sent} invitation email(s) sent; {emails_failed} could not be sent. Check the mail settings in backend/.env.", "error")
     return redirect(url_for("meeting_details", meeting_id=meeting_id_url))
 
 
@@ -1683,8 +1814,10 @@ def create_meeting():
         )
 
     meeting_id = str(meeting["_id"])
-    meeting_link = url_for("participant_meeting", meeting_id=meeting_id, _external=True)
-    registration_link = url_for("participant_register", _external=True)
+    meeting_path = url_for("participant_meeting", meeting_id=meeting_id)
+    meeting_link = external_app_url("participant_meeting", meeting_id=meeting_id)
+    emails_sent = 0
+    emails_failed = 0
     for participant in known_invitees:
         participant_email = participant.get("email")
         create_notification(
@@ -1697,25 +1830,43 @@ def create_meeting():
             message=f"You have been invited to {title}."
         )
         if participant_email:
-            body = f"Hello {participant.get('name', 'Participant')},\n\nYou have been invited to {title}.\nDate: {meeting.get('formatted_date', date)}\nTime: {meeting.get('formatted_time', time)}\n\nSign in to your MeetIQ account to view the meeting: {meeting_link}"
-            try:
-                msg = Message(subject=f"Meeting Invitation - {title}", sender=admin_email, recipients=[participant_email])
-                msg.body = body
-                mail.send(msg)
-            except Exception as email_error:
-                print("Invitation email failed for", participant_email, email_error)
+            body = f"Hello {participant.get('name', 'Participant')},\n\nYou have been invited to {title}.\nDate: {meeting.get('formatted_date', date)}\nTime: {meeting.get('formatted_time', time)}\n\nSign in to your MeetIQ account to view the meeting."
+            if send_invitation_email(
+                participant_email,
+                f"Meeting Invitation - {title}",
+                body,
+                meeting_link,
+                "View meeting"
+            ):
+                emails_sent += 1
+            else:
+                emails_failed += 1
 
     for pending in pending_invites:
-        body = f"Hello {pending['name']},\n\nYou have been invited to {title}.\nDate: {meeting.get('formatted_date', date)}\nTime: {meeting.get('formatted_time', time)}\n\nCreate a MeetIQ participant account with this email address to access the meeting: {registration_link}"
-        try:
-            msg = Message(subject=f"Meeting Invitation - {title}", sender=admin_email, recipients=[pending["email"]])
-            msg.body = body
-            mail.send(msg)
-        except Exception as email_error:
-            print("Invitation email failed for", pending["email"], email_error)
+        registration_link = external_app_url(
+            "participant_register",
+            email=pending["email"],
+            next=meeting_path
+        )
+        body = f"Hello {pending['name']},\n\nYou have been invited to {title}.\nDate: {meeting.get('formatted_date', date)}\nTime: {meeting.get('formatted_time', time)}\n\nCreate a MeetIQ participant account with this email address to access the meeting."
+        if send_invitation_email(
+            pending["email"],
+            f"Meeting Invitation - {title}",
+            body,
+            registration_link,
+            "Register and view meeting"
+        ):
+            emails_sent += 1
+        else:
+            emails_failed += 1
 
     invite_message = f" {len(invited_ids) + len(pending_invites)} participant invitation(s) added." if invitees else ""
-    flash(f"Meeting created successfully!{invite_message}", "success")
+    flash(
+        f"Meeting created successfully!{invite_message} Sent {emails_sent} invitation email(s).",
+        "success"
+    )
+    if emails_failed:
+        flash(f"{emails_sent} invitation email(s) sent; {emails_failed} could not be sent. Check the mail settings in backend/.env.", "error")
     return redirect(url_for("admin_meetings"))
 
 # =========================================================
@@ -2616,7 +2767,10 @@ def participant_meeting(meeting_id):
             "error"
         )
         return redirect(
-            url_for("participant_login")
+            url_for(
+                "participant_login",
+                next=url_for("participant_meeting", meeting_id=meeting_id)
+            )
         )
 
     from bson.objectid import ObjectId

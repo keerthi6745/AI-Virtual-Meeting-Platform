@@ -19,7 +19,7 @@ MeetIQ is a college project for hosting online meetings with participant managem
    backend\venv\Scripts\python -m pip install -r backend\requirements.txt
    ```
 
-3. Create `backend/.env` and set `MONGODB_URI` to a MongoDB database you can access. Keep this file private; it contains credentials.
+3. Create `backend/.env` and set `MONGODB_URI` to a MongoDB database you can access. To send invitations, also configure `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, `MAIL_PASSWORD`, and `MAIL_DEFAULT_SENDER`. Keep this file private; it contains credentials.
 4. Start the app:
 
    ```powershell

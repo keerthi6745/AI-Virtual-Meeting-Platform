@@ -152,6 +152,8 @@
                       method="POST"
                       action="{{ url_for('participant_register') }}">
 
+                    <input type="hidden" name="next" value="{{ next_url or '' }}">
+
 
                     <div class="form-group">
 
@@ -180,6 +182,8 @@
                                 type="email"
                                 name="email"
                                 placeholder="you@example.com"
+                                value="{{ invite_email or '' }}"
+                                {% if invite_email %}readonly{% endif %}
                                 required>
 
                         </div>
@@ -372,7 +376,7 @@
 
                 <div class="bottom-text">
 
-                    <a href="{{ url_for('participant_login') }}">
+                    <a href="{{ url_for('participant_login', next=next_url) }}">
                         Back to Participant Login
                     </a>
 

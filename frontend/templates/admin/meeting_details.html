@@ -263,6 +263,15 @@
         .delete-confirm-actions button { padding:10px 15px; border-radius:9px; cursor:pointer; font-weight:600; }
         .delete-cancel { border:1px solid #343b4b; color:#dbe2f0; background:#1a2030; }
         .delete-confirm { border:1px solid #e34d62; color:white; background:#bd3048; }
+        .meeting-toast-stack { position:fixed; z-index:4000; top:18px; right:20px; display:grid; gap:10px; width:min(390px, calc(100vw - 32px)); }
+        .meeting-toast { display:flex; align-items:flex-start; gap:12px; padding:14px 16px; border:1px solid rgba(120,132,160,.28); border-radius:14px; color:#edf2ff; background:linear-gradient(145deg,rgba(24,31,51,.98),rgba(12,17,30,.98)); box-shadow:0 18px 50px rgba(0,0,0,.42); animation:meetingToastIn .22s ease-out; }
+        .meeting-toast.success { border-color:rgba(80,215,162,.4); }
+        .meeting-toast.error { border-color:rgba(255,100,115,.42); }
+        .meeting-toast-icon { color:#50d7a2; font-weight:800; }
+        .meeting-toast.error .meeting-toast-icon { color:#ff7b8b; }
+        .meeting-toast-message { flex:1; font-size:13px; line-height:1.5; }
+        .meeting-toast-close { border:0; color:#9aa6bd; background:transparent; font-size:18px; cursor:pointer; }
+        @keyframes meetingToastIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
 
 
         /* REMOVE PARTICIPANT */
@@ -455,6 +464,10 @@
 
             border-bottom:
                 1px solid rgba(255,255,255,0.05);
+        }
+
+        .participant.pending-participant {
+            grid-template-columns: 42px minmax(0, 1fr) 80px;
         }
 
 
@@ -650,6 +663,11 @@
 
                 justify-self: start;
             }
+
+            .participant.pending-participant form {
+                grid-column: 3;
+                justify-self: end;
+            }
         }
 
 
@@ -812,6 +830,19 @@
 
 <body>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="meeting-toast-stack" aria-live="polite" aria-atomic="false">
+        {% for category, message in messages %}
+        <div class="meeting-toast {{ category }}" role="status">
+            <span class="meeting-toast-icon" aria-hidden="true">{% if category == 'error' %}!{% else %}✓{% endif %}</span>
+            <span class="meeting-toast-message">{{ message }}</span>
+            <button class="meeting-toast-close" type="button" aria-label="Dismiss message" onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
 
 {% include "admin/_sidebar.html" %}
 
@@ -899,7 +930,7 @@
     action="{{ url_for('end_meeting', meeting_id=meeting._id) }}"
     method="POST"
     style="display:inline;"
-    onsubmit="return confirm('Are you sure you want to end this meeting?');"
+    onsubmit="return openActionDialog(event, 'End this meeting?', 'Participants will be disconnected from the live meeting.', 'End meeting');"
 >
     <button
         type="submit"
@@ -1150,9 +1181,7 @@
                                 participant_id=participant.user_id
                             ) }}"
                             method="POST"
-                            onsubmit="return confirm(
-                                'Remove this participant from the meeting?'
-                            );"
+                            onsubmit="return openActionDialog(event, 'Remove this participant?', 'They will lose access to this meeting.', 'Remove participant');"
                         >
 
                             <button
@@ -1171,12 +1200,19 @@
                 {% endfor %}
 
                 {% for pending in meeting.get('pending_invites', []) %}
-                    <div class="participant">
+                    <div class="participant pending-participant">
                         <div class="avatar">{{ pending.name[0]|upper }}</div>
                         <div>
                             <div class="participant-name">{{ pending.name }}</div>
                             <div class="participant-email">{{ pending.email }} · Registration pending</div>
                         </div>
+                        <form
+                            action="{{ url_for('remove_pending_invitation', meeting_id=meeting._id, email=pending.email) }}"
+                            method="POST"
+                            onsubmit="return openActionDialog(event, 'Remove this invitation?', 'This person will no longer be invited to the meeting.', 'Remove invite');"
+                        >
+                            <button type="submit" class="remove-button">Remove</button>
+                        </form>
                     </div>
                 {% endfor %}
 
@@ -1226,6 +1262,17 @@
 
 
 </main>
+<div class="delete-confirm-overlay" id="actionConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="actionConfirmTitle" onclick="if (event.target === this) closeActionDialog()">
+    <div class="delete-confirm-card">
+        <div class="delete-confirm-icon">⚠️</div>
+        <h2 id="actionConfirmTitle">Confirm action</h2>
+        <p id="actionConfirmMessage"></p>
+        <div class="delete-confirm-actions">
+            <button class="delete-cancel" type="button" onclick="closeActionDialog()">Cancel</button>
+            <button class="delete-confirm" id="confirmActionButton" type="button" onclick="submitPendingAction()">Confirm</button>
+        </div>
+    </div>
+</div>
 <div class="delete-confirm-overlay" id="deleteConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" onclick="if (event.target === this) closeDeleteDialog()">
     <div class="delete-confirm-card">
         <div class="delete-confirm-icon">🗑️</div>
@@ -1238,6 +1285,27 @@
     </div>
 </div>
 <script>
+let pendingActionForm = null;
+function openActionDialog(event, title, message, actionLabel) {
+    event.preventDefault();
+    pendingActionForm = event.currentTarget;
+    document.getElementById("actionConfirmTitle").textContent = title;
+    document.getElementById("actionConfirmMessage").textContent = message;
+    document.getElementById("confirmActionButton").textContent = actionLabel;
+    document.getElementById("actionConfirmOverlay").classList.add("visible");
+    document.getElementById("confirmActionButton").focus();
+    return false;
+}
+function closeActionDialog() {
+    document.getElementById("actionConfirmOverlay").classList.remove("visible");
+    pendingActionForm = null;
+}
+function submitPendingAction() {
+    if (!pendingActionForm) return;
+    const form = pendingActionForm;
+    pendingActionForm = null;
+    form.submit();
+}
 let pendingDeleteForm = null;
 function openDeleteDialog(event) {
     event.preventDefault();
@@ -1257,7 +1325,15 @@ function submitDeleteMeeting() {
     form.submit();
 }
 document.addEventListener("keydown", function(event) {
-    if (event.key === "Escape") closeDeleteDialog();
+    if (event.key === "Escape") {
+        closeActionDialog();
+        closeDeleteDialog();
+    }
+});
+document.querySelectorAll(".meeting-toast").forEach(function(toast) {
+    window.setTimeout(function() {
+        toast.remove();
+    }, 5000);
 });
 </script>
     <script src="{{ url_for('static', filename='js/meetiq.js') }}" defer></script>
